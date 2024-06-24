@@ -5,15 +5,18 @@ const User = db.define(
   "users",
   {
     user_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       unique: true,
       primaryKey: true,
-      autoIncrement: true,
     },
     username: {
       type: DataTypes.STRING,
       required: true,
       unique: true,
+    },    
+    nama_lengkap: {
+      type: DataTypes.STRING,
+      required: false,
     },
     email: {
       type: DataTypes.STRING,
@@ -23,21 +26,27 @@ const User = db.define(
       type: DataTypes.STRING,
       required: true,
     },
+    role: {
+      type: DataTypes.INTEGER,
+      required: true,
+      defaultValue: 1,
+    },
     refresh_token: {
       type: DataTypes.TEXT,
       required: true,
     },
-    updatedAt: {
+    updated_at: {
       type: DataTypes.DATE,
       required: true,
     },
-    createdAt: {
+    created_at: {
       type: DataTypes.DATE,
       required: true,
       defaultValue: DataTypes.NOW,
     },
   },
   {
+    timestamps: false,
     freezeTableName: true,
   }
 );

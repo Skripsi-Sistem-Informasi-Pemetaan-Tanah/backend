@@ -31,7 +31,16 @@ const koordinat = db.define(
           model: Map,
           key: 'map_id'
         }
-      }
+      },
+      updated_at: {
+        type: DataTypes.DATE,
+        required: true,
+      },
+      created_at: {
+        type: DataTypes.DATE,
+        required: true,
+        defaultValue: DataTypes.NOW,
+      },
   },
   {
     freezeTableName: true,

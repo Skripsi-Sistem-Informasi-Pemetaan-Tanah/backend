@@ -15,7 +15,7 @@ export const getAllMaps = async (req, res) => {
   const client = await pool.connect();
   try {
     //const result = await client.query("SELECT * FROM maps");
-    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.name) AS name, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3 ORDER BY 1");
+    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3 ORDER BY 1");
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
@@ -35,7 +35,7 @@ export const getAllMaps = async (req, res) => {
           type: "Feature",
           properties: {
             map_id: row.map_id,
-            name: row.name.trim(),
+            nama_lahan: row.nama_lahan.trim(),
             status: row.status,
             //fieldtype: row.fieldtype.trim(),
           },
@@ -83,7 +83,7 @@ export const getMapById = async (req, res) => {
   const { mapId } = req.params;
   try {
     const result = await client.query(
-        "SELECT TRIM(maps.name) AS name, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2 ORDER BY 1",
+        "SELECT TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2 ORDER BY 1",
         [mapId]
     );
     
@@ -97,7 +97,7 @@ export const getMapById = async (req, res) => {
     const features = {
           type: "Feature",
           properties: {
-            name: data.name.trim(), 
+            nama_lahan: data.nama_lahan.trim(), 
             status: data.status 
           },
           geometry: {
@@ -132,15 +132,11 @@ export const editMap = async (req, res) => {
   const { mapId, koor } = req.body;
   try {
     const editGeom = await client.query(
-      "UPDATE " + db + " SET koor=$1, updatedAt = NOW() WHERE map_id=$2",
+      "UPDATE koordinat SET koordinat=$1 WHERE map_id=$2",
       [koor, mapId]
     );
-    const addHistory = await client.query(
-      "insert into history (history_id,status,updatedAt,progress) values($1,'Data peta diubah',NOW(),1)",
-      [mapId]
-    );
     client.release();
-    if (editGeom && addHistory)
+    if (editGeom)
       return utilMessage(
         res,
         200,
@@ -187,21 +183,25 @@ export const addMap = async (req, res) => {
     // });
     //query
     const addMap = await client.query(
-      "insert into " + db + "(name,koordinat) values($1,$2)",
-      [name, koordinat]
+      "insert into " + db + " (name) values($1)",
+      [name]
     );
     const getmap_id = await client.query(
       "SELECT MAX(map_id) AS max_map_id FROM " + db
     );
-    const mapId = getmap_id.rows[0].max_map_id;
-    const addHistory = await client.query(
-      "INSERT INTO histories (history_id, status) VALUES ($1, 1)",
-      [mapId]
-    );
-
+    for (const coordinate of koordinat) {
+      const x = 0
+      await client.query(
+          "INSERT INTO koordinat (map_id, koordinat) VALUES ($1, $2)",
+          [getmap_id+x, coordinate]
+      );
+      x++;
+  }
+  
+    const addKoordinat = 
     client.release();
 
-    if (addMap || addHistory) {
+    if (addMap) {
       return utilMessage(res, 200, "Data berhasil ditambahkan");
     } else {
       return utilMessage(res, 403, "Data gagal ditambahkan");

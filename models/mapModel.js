@@ -6,21 +6,24 @@ const Map = db.define(
   "maps",
   {
     map_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       unique: true,
-      autoIncrement: true,
       primaryKey: true,
     },
-    name: {
-      type: DataTypes.CHAR(100),
+    user_id: {
+      type: DataTypes.STRING,
       allowNull: false,
         references: {
           model: User,
-          key: 'username'
+          key: 'user_id'
         }
     },
+    nama_lahan: {
+      type: DataTypes.CHAR(30),
+      required: true,
+    },
     koordinat: {
-      type: DataTypes.ARRAY(DataTypes.DOUBLE),
+      type: DataTypes.JSONB,
       required: false,
     },
     status: {
@@ -32,6 +35,19 @@ const Map = db.define(
       type: DataTypes.INTEGER,
       required: true,
       defaultValue: 0,
+    },
+    komentar: {
+      type: DataTypes.TEXT,
+      required: false,
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      required: true,
+    },
+    created_at: {
+      type: DataTypes.DATE,
+      required: true,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

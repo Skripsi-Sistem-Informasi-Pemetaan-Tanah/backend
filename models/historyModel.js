@@ -3,7 +3,7 @@ import { db } from "../config/db.js";
 import Map from "../models/mapModel.js";
 
 const History = db.define(
-  "histories",
+  "history",
   {
     history_id: {
       type: DataTypes.INTEGER,
@@ -11,19 +11,31 @@ const History = db.define(
       autoIncrement: true,
       primaryKey: true,
     },
-    status: {
-      type: DataTypes.CHAR(25),
-      required: true,
-      defaultValue: "belum tervalidasi",
-    },
     map_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
       references: {
         model: Map,
         key: 'map_id'
       }
-    }
+    },
+    old_coordinate: {
+      type: DataTypes.TEXT,
+      required: false,
+    },
+    new_coordinate: {
+      type: DataTypes.TEXT,
+      required: false,
+    },
+    status: {
+      type: DataTypes.CHAR(25),
+      required: true,
+      defaultValue: "belum tervalidasi",
+    },
+    updated_at: {
+      type: DataTypes.DATE,
+      required: true,
+    },
   },
   {
     freezeTableName: true,

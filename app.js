@@ -9,7 +9,7 @@ import User from "./models/userModel.js";
 import Map from "./models/mapModel.js";
 import history from "./models/historyModel.js";
 import koordinat from "./models/koordinatModel.js";
-
+import Verifikasi from "./models/verifikasiModel.js";
 
 dotenv.config();
 database();
@@ -37,6 +37,12 @@ const PORT = 5000;
 // } catch (error) {
 //   console.log(`error : ${error.message}`);
 // }
+// try {
+//   await Verifikasi.sync({ force: true });
+// } catch (error) {
+//   console.log(`error : ${error.message}`);
+// }
+
 app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

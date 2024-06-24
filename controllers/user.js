@@ -35,6 +35,7 @@ export const register = async (req, res) => {
       username: username,
       email: email,
       password: hashPassword,
+      user_id: username
     });
     if (postUser) return utilMessage(res, 200, "Registrasi berhasil");
     return utilMessage(res, 403, "Registrasi gagal, Access ditolak");
