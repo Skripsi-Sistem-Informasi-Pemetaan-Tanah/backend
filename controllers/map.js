@@ -83,7 +83,7 @@ export const getMapById = async (req, res) => {
   const { mapId } = req.params;
   try {
     const result = await client.query(
-        "SELECT TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2 ORDER BY 1",
+        "SELECT TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2,3 ORDER BY 1",
         [mapId]
     );
     
