@@ -52,19 +52,19 @@ export const cekValidasi = async (req, res) => {
     const coordinateCount = await checkCoordinateCount(mapId);
     if (coordinateCount >= 3) {
       // Update progress to 1 if condition is met
-      await updateProgress(mapId, 20);
+      await updateProgress(mapId, 25);
 
       // Check if all coordinates have photos
       const allPhotosAvailable = await checkPhoto(mapId);
       if (allPhotosAvailable) {
         // Update progress to 2 if condition is met
-        await updateProgress(mapId, 40);
+        await updateProgress(mapId, 50);
 
         // Check if any coordinate is close to another coordinate
         const coordinatesAreValid = await checkArround(mapId);
         if (coordinatesAreValid) {
           // Update progress to 3 if condition is met
-          await updateProgress(mapId, 60); 
+          await updateProgress(mapId, 75); 
           await addKomentar(mapId, "tervalidasi");
         } else {
           await addKomentar(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
