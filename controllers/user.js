@@ -49,6 +49,8 @@ export const login = async (req, res) => {
     const { username, password } = req.body;
     const dataUser = await User.findOne({ where: { username } });
     if (!dataUser) return utilMessage(res, 404, "Username salah");
+    const role = dataUser.role
+    if (role !== 2) return utilMessage(res, 404, "Anda tidak memiliki akses login ke web");
     const userId = dataUser.user_id;
     const userUsername = dataUser.username;
     const userPassword = dataUser.password;
