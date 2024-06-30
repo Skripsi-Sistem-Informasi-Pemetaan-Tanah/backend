@@ -49,41 +49,51 @@ export const login = async (req, res) => {
     const { username, password } = req.body;
     const dataUser = await User.findOne({ where: { username } });
     if (!dataUser) return utilMessage(res, 404, "Username salah");
-    const role = dataUser.role
+
+    const role = dataUser.role;
     if (role !== 2) return utilMessage(res, 404, "Anda tidak memiliki akses login ke web");
+
     const userId = dataUser.user_id;
     const userUsername = dataUser.username;
     const userPassword = dataUser.password;
+
     const matchPassword = await bcrypt.compare(password, userPassword);
     if (!matchPassword) return utilMessage(res, 404, "password salah");
+
     const accessToken = jwt.sign(
-      { userId, userUsername, userPassword },
+      { userId, username: userUsername, userPassword },
       process.env.PRIVATE_KEY,
       {
         expiresIn: "600s",
       },
     );
+
     const refreshToken = jwt.sign(
-      { userId, userUsername, userPassword },
+      { userId, username: userUsername, userPassword },
       process.env.REFRESH_TOKEN_SECRET,
       {
         expiresIn: "1d",
       },
     );
+
     await User.update(
       { refresh_token: refreshToken },
       { where: { user_id: userId } },
     );
+
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       maxAge: 60 * 60 * 24 * 1000,
-      // secure: true,
+      secure: process.env.NODE_ENV === 'production', // Ensure secure flag is set only in production
+      sameSite: 'None', // Set SameSite to None for cross-site requests
     });
+
     return utilData(res, 200, { accessToken });
   } catch (error) {
     return utilError(res, error);
   }
 };
+
 
 export const logout = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;

@@ -1,28 +1,24 @@
 import jwt from 'jsonwebtoken';
-import User from "../models/userModel.js";
+import User from '../models/userModel.js';
 import { utilMessage, utilData, utilError } from '../utils/message.js';
 
-// Middleware to verify token and check role
-export const verifyToken = (requiredRole = null) => {
+export const verifyToken = (requiredRole) => {
   return async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = req.cookies.refreshToken;
 
-    if (token == null) return utilMessage(res, 401, 'Token not found');
+    if (!token) return utilMessage(res, 401, 'Token not found');
 
-    jwt.verify(token, process.env.PRIVATE_KEY, async (err, decoded) => {
+    jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
       if (err) return utilMessage(res, 403, 'Token is not valid');
 
       try {
-        // Fetch the user from the database
         const dataUser = await User.findOne({ where: { username: decoded.username } });
         if (!dataUser) return utilMessage(res, 404, 'User not found');
 
         req.username = dataUser.username;
         req.role = dataUser.role;
 
-        // Check if the user's role matches the required role
-        if (req.role !== 2) {
+        if (req.role !== requiredRole) {
           return utilMessage(res, 403, 'Access denied');
         }
 

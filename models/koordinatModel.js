@@ -25,7 +25,7 @@ const koordinat = db.define(
         required: false,
       },
     map_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
         references: {
           model: Map,

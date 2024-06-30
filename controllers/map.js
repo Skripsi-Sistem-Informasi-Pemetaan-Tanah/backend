@@ -15,7 +15,7 @@ export const getAllMaps = async (req, res) => {
   const client = await pool.connect();
   try {
     //const result = await client.query("SELECT * FROM maps");
-    const result = await client.query("SELECT TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2,3 ORDER BY 1");
+    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3 ORDER BY 1");
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
