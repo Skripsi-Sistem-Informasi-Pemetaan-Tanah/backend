@@ -15,7 +15,7 @@ export const getUser = async (req, res) => {
 };
 export const register = async (req, res) => {
   try {
-    const { username, email, password, confirmPassword } = req.body;
+    const { username, email, password, confirmPassword, optionalCode } = req.body;
     const dataUser = await User.findOne({ where: { username } });
     // cek, apakah nomer tlpn valid? +62821 OK / +50? OK ATAU GAGAL?
     //if (cekEmail===false) return (res, 400, 'Email tidak valid')
@@ -31,13 +31,24 @@ export const register = async (req, res) => {
       );
     const saltRound = Number(process.env.SALT_ROUND) || 10;
     const hashPassword = await bcrypt.hash(password, saltRound);
-    const postUser = await User.create({
-      username: username,
-      email: email,
-      password: hashPassword,
-      user_id: username
-    });
-    if (postUser) return utilMessage(res, 200, "Registrasi berhasil");
+    if (optionalCode = "123") {
+      const postUser = await User.create({
+        username: username,
+        email: email,
+        password: hashPassword,
+        user_id: username,
+        role: 2,
+      });
+      if (postUser) return utilMessage(res, 200, "Registrasi Admin berhasil");
+    }else{
+      const postUser = await User.create({
+        username: username,
+        email: email,
+        password: hashPassword,
+        user_id: username
+      });
+      if (postUser) return utilMessage(res, 200, "Registrasi berhasil");
+    }
     return utilMessage(res, 403, "Registrasi gagal, Access ditolak");
   } catch (error) {
     return utilError(res, error);
@@ -96,18 +107,26 @@ export const login = async (req, res) => {
 
 
 export const logout = async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) return utilMessage(204);
-  const dataUser = await User.findAll({
-    where: {
-      refresh_token: refreshToken,
-    },
-  });
-  if (!dataUser) return utilMessage(204);
-  const userId = dataUser.user_id;
-  await User.update({ refresh_token: null }, { where: { user_id: userId } });
-  res.clearcookie("refreshToken");
-  return utilMessage(200);
+  try {
+    const refreshToken = req.cookies.refreshToken;
+    if (!refreshToken) return utilMessage(204);
+    
+    const dataUser = await User.findAll({
+      where: {
+        refresh_token: refreshToken,
+      },
+    });
+    if (!dataUser) return utilMessage(204);
+    
+    const userId = dataUser[0].user_id;
+    await User.update({ refresh_token: null }, { where: { user_id: userId } });
+    
+    res.clearCookie("refreshToken");
+    return utilMessage(200);
+  } catch (error) {
+    console.error('An error occurred during logout:', error);
+    return utilMessage(500, 'An error occurred during logout');
+  }
 };
 
 // export const forgotPassword = async (req, res) => {
