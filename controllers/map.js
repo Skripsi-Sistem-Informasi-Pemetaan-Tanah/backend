@@ -19,18 +19,6 @@ export const getAllMaps = async (req, res) => {
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
-//         SELECT
-//     MAX(id) AS id,
-//     MAX(status) AS status,
-//     map_id,
-//     STRING_AGG(koordinat, ',') AS koordinat
-// FROM
-//     your_table_name
-// WHERE
-//     map_id = row.map_id
-// GROUP BY
-//     map_id;
-        //return result.rows
         return {
           type: "Feature",
           properties: {
@@ -42,29 +30,12 @@ export const getAllMaps = async (req, res) => {
           geometry: {
             coordinates: coordinates
           },
-          // geometry: {
-          //   koordinat: row.koordinat.map((koordinat) => [
-          //     parseFloat(koordinat[0]),
-          //     parseFloat(koordinat[1]),
-          //   ]),
-          // },
         };
       } else {
-        return null; // or handle the case where koor is null in a way that makes sense for your application
+        return null;
       }
     }));
 
-    // Filter out the null values before creating the GeoJSON response
-    //const filteredResults = results.filter((result) => result !== null);
-    // Filter unique map_id
-    // const uniqueMapIds = new Set();
-    // const uniqueResults = [];
-    // for (const result of results) {
-    //   if (result && !uniqueMapIds.has(result.properties.map_id)) {
-    //     uniqueMapIds.add(result.properties.map_id);
-    //     uniqueResults.push(result);
-    //   }
-    // }
     const geoJsonResponse = featureCollection(results);
     console.log("hit API all")
 
@@ -87,7 +58,8 @@ export const getMapById = async (req, res) => {
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress, 
         maps.status AS status, 
-        ARRAY_AGG(koordinat.koordinat) AS coordinates, 
+        ARRAY_AGG(koordinat.koordinat) AS coordinates,
+        ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
         users.nama_lengkap AS nama_lengkap 
       FROM koordinat 
       JOIN maps ON maps.map_id = koordinat.map_id 
@@ -114,7 +86,8 @@ export const getMapById = async (req, res) => {
         nama_lengkap: data.nama_lengkap
       },
       geometry: {
-        coordinates: data.coordinates
+        coordinates: data.coordinates,
+        image: data.image
       }
     };
 
