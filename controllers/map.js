@@ -15,7 +15,7 @@ export const getAllMaps = async (req, res) => {
   const client = await pool.connect();
   try {
     //const result = await client.query("SELECT * FROM maps");
-    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3 ORDER BY 1");
+    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3,4 ORDER BY 1");
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
@@ -83,10 +83,21 @@ export const getMapById = async (req, res) => {
   const { mapId } = req.params;
   try {
     const result = await client.query(
-        "SELECT TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS coordinates FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id WHERE koordinat.map_id = $1 GROUP BY 1,2,3 ORDER BY 1",
+        `SELECT 
+        TRIM(maps.nama_lahan) AS nama_lahan, 
+        maps.progress AS progress, 
+        maps.status AS status, 
+        ARRAY_AGG(koordinat.koordinat) AS coordinates, 
+        users.nama_lengkap AS nama_lengkap 
+      FROM koordinat 
+      JOIN maps ON maps.map_id = koordinat.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      WHERE koordinat.map_id = $1 
+      GROUP BY maps.nama_lahan, maps.progress, maps.status, users.nama_lengkap 
+      ORDER BY maps.nama_lahan`,
         [mapId]
     );
-    
+
     const data = result.rows[0];
 
     if (!data) {
@@ -95,28 +106,18 @@ export const getMapById = async (req, res) => {
     }
 
     const features = {
-          type: "Feature",
-          properties: {
-            nama_lahan: data.nama_lahan.trim(), 
-            status: data.status,
-            progress: data.progress
-          },
-          geometry: {
-            coordinates: data.coordinates
-          }
-        };
-    // const { name, status, koordinat } = data[0];
-    //const features = results[0]
-    // const features = {
-    //   type: "Feature",
-    //   properties: {
-    //     name: name, 
-    //     status: status 
-    //   },
-    //   geometry: {
-    //     coordinates: koordinat
-    //   }
-    // };
+      type: "Feature",
+      properties: {
+        nama_lahan: data.nama_lahan.trim(),
+        status: data.status,
+        progress: data.progress,
+        nama_lengkap: data.nama_lengkap
+      },
+      geometry: {
+        coordinates: data.coordinates
+      }
+    };
+
     console.log("hit API ID");
     return utilData(res, 200, { features });
   } catch (error) {
@@ -125,7 +126,7 @@ export const getMapById = async (req, res) => {
     return utilData(res, 500, { message: "Internal Server Error" });
   } finally {
     client.release();
-  }
+  }
 };
 
 export const editMap = async (req, res) => {
