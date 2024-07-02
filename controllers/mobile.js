@@ -4,16 +4,16 @@ import bodyParser from "body-parser";
 
 export const checkConnectionDatabase = async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW()');
-    console.log('Successfully connected to the database');
+    const result = await pool.query("SELECT NOW()");
+    console.log("Successfully connected to the database");
     return utilData(res, 200, {
       connected: true,
-      message: 'Database connection successful',
-      timestamp: result.rows[0].now
+      message: "Database connection successful",
+      timestamp: result.rows[0].now,
     });
   } catch (error) {
-    console.error('Error connecting to the database:', error);
-    return utilError(res, error, 'Failed to connect to the database');
+    console.error("Error connecting to the database:", error);
+    return utilError(res, error, "Failed to connect to the database");
   }
 };
 
@@ -35,22 +35,22 @@ export const saveUser = async (req, res) => {
     `;
     const currentTime = new Date();
     const values = [
-      user.user_id, 
-      user.username, 
-      user.nama_lengkap, 
-      user.email, 
-      null, 
-      2, 
-      null, 
-      currentTime, 
-      currentTime
+      user.user_id,
+      user.username,
+      user.nama_lengkap,
+      user.email,
+      null,
+      2,
+      null,
+      currentTime,
+      currentTime,
     ];
 
     await pool.query(query, values);
-    return utilMessage(res, 200, 'User saved successfully');
+    return utilMessage(res, 200, "User saved successfully");
   } catch (error) {
-    console.error('Error saving user:', error);
-    return utilError(res, error, 'Error saving user');
+    console.error("Error saving user:", error);
+    return utilError(res, error, "Error saving user");
   }
 };
 
@@ -65,16 +65,23 @@ export const updateUserField = async (req, res) => {
 
     fieldsToUpdate.updated_at = new Date();
 
-    const setString = Object.keys(fieldsToUpdate).map((key, index) => `${key} = $${index + 2}`).join(', ');
+    const setString = Object.keys(fieldsToUpdate)
+      .map((key, index) => `$${key} = $${index + 2}`)
+      .join(", ");
+
     const values = [user_id, ...Object.values(fieldsToUpdate)];
 
-    const query = `UPDATE users SET ${setString} WHERE user_id = $1`;
+    const query = `
+      UPDATE users
+      SET ${setString}
+      WHERE user_id = $1
+    `;
 
     await pool.query(query, values);
-    return utilMessage(res, 200, 'User updated successfully');
+    return utilMessage(res, 200, "User updated successfully");
   } catch (error) {
-    console.error('Error updating user:', error);
-    return utilError(res, error, 'Error updating user');
+    console.error("Error updating user:", error);
+    return utilError(res, error, "Error updating user");
   }
 };
 
@@ -82,12 +89,45 @@ export const deleteUser = async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const query = 'DELETE FROM users WHERE user_id = $1';
-    await pool.query(query, [userId]);
-    return utilMessage(res, 200, 'User deleted successfully');
+    // Start a transaction
+    await pool.query("BEGIN");
+
+    // Get all map_ids for the given user_id
+    const getMapIdsQuery = "SELECT map_id FROM maps WHERE user_id = $1";
+    const mapIdsResult = await pool.query(getMapIdsQuery, [userId]);
+    const mapIds = mapIdsResult.rows.map((row) => row.map_id);
+
+    // Delete from verifikasi, history, and koordinat tables
+    if (mapIds.length > 0) {
+      const deleteVerifikasiQuery =
+        "DELETE FROM verifikasi WHERE map_id = ANY($1::uuid[])";
+      const deleteHistoryQuery =
+        "DELETE FROM history WHERE map_id = ANY($1::uuid[])";
+      const deleteKoordinatQuery =
+        "DELETE FROM koordinat WHERE map_id = ANY($1::uuid[])";
+
+      await pool.query(deleteVerifikasiQuery, [mapIds]);
+      await pool.query(deleteHistoryQuery, [mapIds]);
+      await pool.query(deleteKoordinatQuery, [mapIds]);
+    }
+
+    // Delete from maps table
+    const deleteMapsQuery = "DELETE FROM maps WHERE user_id = $1";
+    await pool.query(deleteMapsQuery, [userId]);
+
+    // Delete from users table
+    const deleteUserQuery = "DELETE FROM users WHERE user_id = $1";
+    await pool.query(deleteUserQuery, [userId]);
+
+    // Commit the transaction
+    await pool.query("COMMIT");
+
+    return utilMessage(res, 200, "User and related data deleted successfully");
   } catch (error) {
-    console.error('Error deleting user:', error);
-    return utilError(res, error, 'Error deleting user');
+    // Rollback the transaction in case of error
+    await pool.query("ROLLBACK");
+    console.error("Error deleting user and related data:", error);
+    return utilError(res, error, "Error deleting user and related data");
   }
 };
 
@@ -96,7 +136,7 @@ export const saveLahan = async (req, res) => {
 
   try {
     if (!lahan.map_id) {
-      throw new Error('map_id is required');
+      throw new Error("map_id is required");
     }
 
     const currentTime = new Date();
@@ -113,14 +153,14 @@ export const saveLahan = async (req, res) => {
         updated_at = EXCLUDED.updated_at
     `;
     const mapsValues = [
-      lahan.map_id, 
-      lahan.user_id, 
-      lahan.nama_lahan, 
-      JSON.stringify(lahan.koordinat), 
-      'belum tervalidasi', 
-      0, 
-      currentTime, 
-      currentTime
+      lahan.map_id,
+      lahan.user_id,
+      lahan.nama_lahan,
+      JSON.stringify(lahan.koordinat),
+      0,
+      0,
+      currentTime,
+      currentTime,
     ];
     await pool.query(mapsQuery, mapsValues);
 
@@ -134,18 +174,18 @@ export const saveLahan = async (req, res) => {
       `;
       const koordinatValues = [
         lahan.map_id,
-        coord.coordinates.split(',').map(parseFloat), 
-        coord.foto_patokan, 
-        currentTime, 
-        currentTime
+        coord.koordinat.split(",").map(parseFloat),
+        coord.image,
+        currentTime,
+        currentTime,
       ];
       await pool.query(koordinatQuery, koordinatValues);
     }
 
-    return utilMessage(res, 200, 'Lahan saved successfully');
+    return utilMessage(res, 200, "Lahan saved successfully");
   } catch (error) {
-    console.error('Error saving lahan:', error);
-    return utilError(res, error, 'Error saving lahan');
+    console.error("Error saving lahan:", error);
+    return utilError(res, error, "Error saving lahan");
   }
 };
 
@@ -154,7 +194,7 @@ export const updateFotoPatokan = async (req, res) => {
 
   try {
     if (!lahan.map_id) {
-      throw new Error('map_id is required');
+      throw new Error("map_id is required");
     }
 
     const currentTime = new Date();
@@ -164,7 +204,11 @@ export const updateFotoPatokan = async (req, res) => {
       SET koordinat = $1, updated_at = $2
       WHERE map_id = $3
     `;
-    const mapsValues = [JSON.stringify(lahan.koordinat), currentTime, lahan.map_id];
+    const mapsValues = [
+      JSON.stringify(lahan.koordinat),
+      currentTime,
+      lahan.map_id,
+    ];
     await pool.query(updateMapsQuery, mapsValues);
 
     for (const coord of lahan.koordinat) {
@@ -174,18 +218,18 @@ export const updateFotoPatokan = async (req, res) => {
         WHERE map_id = $3 AND koordinat = $4
       `;
       const koordinatValues = [
-        coord.foto_patokan,
+        coord.image,
         currentTime,
         lahan.map_id,
-        coord.coordinates.split(',').map(parseFloat)
+        coord.koordinat.split(",").map(parseFloat),
       ];
       await pool.query(updateKoordinatQuery, koordinatValues);
     }
 
-    return utilMessage(res, 200, 'Foto patokan updated successfully');
+    return utilMessage(res, 200, "Foto patokan updated successfully");
   } catch (error) {
-    console.error('Error updating foto patokan:', error);
-    return utilError(res, error, 'Error updating foto patokan');
+    console.error("Error updating foto patokan:", error);
+    return utilError(res, error, "Error updating foto patokan");
   }
 };
 
@@ -193,52 +237,69 @@ export const getAllLahanbyUserId = async (req, res) => {
   const userId = req.params.user_id;
 
   try {
-    const mapsQuery = 'SELECT user_id, map_id, updated_at, koordinat FROM maps WHERE user_id = $1';
+    const mapsQuery =
+      "SELECT user_id, map_id, updated_at, koordinat FROM maps WHERE user_id = $1";
     const mapsResult = await pool.query(mapsQuery, [userId]);
 
-    const verifikasiQuery = 'SELECT map_id, komentar, progress, status, updated_at FROM verifikasi';
+    // const patokanQuery = 'SELECT map_id, koordinat, image FROM koordinat';
+    // const patokanResult = await pool.query(patokanQuery);
+
+    const verifikasiQuery =
+      "SELECT map_id, komentar, progress, status, updated_at FROM verifikasi";
     const verifikasiResult = await pool.query(verifikasiQuery);
 
-    const lahanData = mapsResult.rows.map(map => {
-      const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
+    const lahanData = mapsResult.rows.map((map) => {
+      // const patokanData = patokanResult.rows.filter(p => p.map_id === map.map_id);
+      const verifikasiData = verifikasiResult.rows.filter(
+        (v) => v.map_id === map.map_id,
+      );
       return {
         user_id: map.user_id,
         map_id: map.map_id,
         updated_at: map.updated_at,
         koordinat: map.koordinat,
-        verifikasi: verifikasiData
+        // koordinat: patokanData,
+        verifikasi: verifikasiData,
       };
     });
 
     return utilData(res, 200, { lahan: lahanData });
   } catch (error) {
-    console.error('Error fetching lahan data for user:', error);
-    return utilError(res, error, 'Error fetching lahan data for user');
+    console.error("Error fetching lahan data for user:", error);
+    return utilError(res, error, "Error fetching lahan data for user");
   }
 };
 
 export const getAllLahan = async (req, res) => {
   try {
-    const mapsQuery = 'SELECT user_id, map_id, updated_at, koordinat FROM maps';
+    const mapsQuery = "SELECT user_id, map_id, updated_at, koordinat FROM maps";
     const mapsResult = await pool.query(mapsQuery);
 
-    const verifikasiQuery = 'SELECT map_id, komentar, progress, status, updated_at FROM verifikasi';
+    // const patokanQuery = 'SELECT map_id, koordinat, image FROM koordinat';
+    // const patokanResult = await pool.query(patokanQuery);
+
+    const verifikasiQuery =
+      "SELECT map_id, komentar, progress, status, updated_at FROM verifikasi";
     const verifikasiResult = await pool.query(verifikasiQuery);
 
-    const lahanData = mapsResult.rows.map(map => {
-      const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
+    const lahanData = mapsResult.rows.map((map) => {
+      // const patokanData = patokanResult.rows.filter(p => p.map_id === map.map_id);
+      const verifikasiData = verifikasiResult.rows.filter(
+        (v) => v.map_id === map.map_id,
+      );
       return {
         user_id: map.user_id,
         map_id: map.map_id,
         updated_at: map.updated_at,
         koordinat: map.koordinat,
-        verifikasi: verifikasiData
+        // koordinat: patokanData,
+        verifikasi: verifikasiData,
       };
     });
 
     return utilData(res, 200, { lahan: lahanData });
   } catch (error) {
-    console.error('Error fetching lahan data:', error);
-    return utilError(res, error, 'Error fetching lahan data');
+    console.error("Error fetching lahan data:", error);
+    return utilError(res, error, "Error fetching lahan data");
   }
 };
