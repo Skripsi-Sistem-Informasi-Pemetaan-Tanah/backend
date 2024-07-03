@@ -15,13 +15,18 @@ export const getAllMaps = async (req, res) => {
   const client = await pool.connect();
   try {
     //const result = await client.query("SELECT * FROM maps");
+<<<<<<< Updated upstream
     const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3,4 ORDER BY 1");
+=======
+    const result = await client.query("SELECT users.nama_lengkap AS name, koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress,maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id JOIN users ON maps.user_id = users.user_id GROUP BY 1,2,3,4,5 ORDER BY 1");
+>>>>>>> Stashed changes
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
         return {
           type: "Feature",
           properties: {
+            nama: row.name,
             map_id: row.map_id,
             nama_lahan: row.nama_lahan.trim(),
             status: row.status,
@@ -32,7 +37,11 @@ export const getAllMaps = async (req, res) => {
           },
         };
       } else {
+<<<<<<< Updated upstream
         return null;
+=======
+        return null; 
+>>>>>>> Stashed changes
       }
     }));
 
@@ -55,6 +64,7 @@ export const getMapById = async (req, res) => {
   try {
     const result = await client.query(
         `SELECT 
+<<<<<<< Updated upstream
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress, 
         maps.status AS status, 
@@ -67,6 +77,26 @@ export const getMapById = async (req, res) => {
       WHERE koordinat.map_id = $1 
       GROUP BY maps.nama_lahan, maps.progress, maps.status, users.nama_lengkap 
       ORDER BY maps.nama_lahan`,
+=======
+    TRIM(maps.nama_lahan) AS nama_lahan,
+    maps.progress AS progress, 
+    maps.status AS status, 
+     ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
+    ARRAY_AGG(koordinat.koordinat) AS coordinates 
+FROM 
+    koordinat 
+JOIN 
+    maps ON maps.map_id = koordinat.map_id 
+WHERE 
+    koordinat.map_id = $1 
+GROUP BY 
+    maps.nama_lahan, 
+    maps.progress, 
+    maps.status 
+ORDER BY 
+    maps.nama_lahan;
+`,
+>>>>>>> Stashed changes
         [mapId]
     );
 
@@ -80,7 +110,11 @@ export const getMapById = async (req, res) => {
     const features = {
       type: "Feature",
       properties: {
+<<<<<<< Updated upstream
         nama_lahan: data.nama_lahan.trim(),
+=======
+        nama_lahan: data.nama_lahan.trim(), 
+>>>>>>> Stashed changes
         status: data.status,
         progress: data.progress,
         nama_lengkap: data.nama_lengkap
@@ -122,41 +156,11 @@ export const editMap = async (req, res) => {
     return utilError(res, err);
   }
 };
-// function coordinatesToWKT(coordinates) {
-//   // Check if there are enough points to form a polygon
-//   if (coordinates.length < 3) return utilMessage(res, 404, "A polygon must have at least 3 coordinates.");
-
-//   // Convert the list of coordinates to WKT format
-//   let wkt = "MULTIPOLYGON(((";
-//   for (let i = 0; i < coordinates.length; i++) {
-//       const [x, y] = coordinates[i];
-//       wkt += `${x} ${y}`;
-//       if (i < coordinates.length - 1) {
-//           wkt += ",";
-//       }
-//   }
-//   wkt += ")))";
-
-//   return wkt;
-// }
 
 export const addMap = async (req, res) => {
   const client = await pool.connect();
   const { name, koordinat } = req.body;
   try {
-    //const convertWKT = coordinatesToWKT(koor);
-    // console.log(convertWKT);
-    // console.log(koor[1])
-
-    //sequalize;
-    // const addMap = await Map.create({
-    //   name: name,
-    //   koordinat: koordinat,
-    //   defaults: {
-    //     status: "belum tervalidasi",
-    //   },
-    // });
-    //query
     const addMap = await client.query(
       "insert into " + db + " (name) values($1)",
       [name]
@@ -172,10 +176,7 @@ export const addMap = async (req, res) => {
       );
       x++;
   }
-  
-    const addKoordinat = 
     client.release();
-
     if (addMap) {
       return utilMessage(res, 200, "Data berhasil ditambahkan");
     } else {
@@ -189,30 +190,30 @@ export const addMap = async (req, res) => {
 export const deleteMap = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.body;
+
   try {
-    const deleteMap = await client.query(
-      "DELETE FROM " + db + " WHERE map_id = $1",
+    // Start the transaction
+    await client.query('BEGIN');
+    // Delete from 'koordinat' table
+    const deleteKoordinat = await client.query(
+      "DELETE FROM koordinat WHERE map_id = $1",
       [mapId]
     );
+    const deleteMap = await client.query(
+      "DELETE FROM maps WHERE map_id = $1",
+      [mapId]
+    );
+    await client.query('COMMIT');
     client.release();
-    if (deleteMap)
-      return utilMessage(
-        res,
-        200,
-        "Data dengan id " + mapId + " berhasil diubah"
-      );
-    return utilMessage(res, 403, "Data gagal diubah");
+
+    if (deleteMap.rowCount > 0 && deleteKoordinat.rowCount > 0) {
+      return utilMessage(res,200,"Data dengan id " + mapId + " berhasil dihapus");
+    } else {
+      return utilMessage(res, 403, "Data gagal dihapus");
+    }
   } catch (error) {
+    await client.query('ROLLBACK');
+    client.release();
     return utilError(res, error);
   }
 };
-//     try {
-//         const { map_id, name, geom } = req.body
-
-//         const addGeom = pool.query('INSERT INTO test (map_id,name,geom) values($1,$2,ST_GeomFromText($3, 4326)))', [map_id, name, geom])
-//         if (addGeom) return utilMessage(res, 200, 'Data berhasil ditambahkan')
-//         return utilMessage(res, 403, 'Data gagal ditambahkan')
-//     } catch (error) {
-//         return utilError(res, error)
-//     }
-//   }
