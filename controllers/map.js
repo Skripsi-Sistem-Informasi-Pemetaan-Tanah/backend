@@ -15,11 +15,9 @@ export const getAllMaps = async (req, res) => {
   const client = await pool.connect();
   try {
     //const result = await client.query("SELECT * FROM maps");
-<<<<<<< Updated upstream
-    const result = await client.query("SELECT koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress, maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id GROUP BY 1,2,3,4 ORDER BY 1");
-=======
+
     const result = await client.query("SELECT users.nama_lengkap AS name, koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress,maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id JOIN users ON maps.user_id = users.user_id GROUP BY 1,2,3,4,5 ORDER BY 1");
->>>>>>> Stashed changes
+
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
         const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
@@ -37,11 +35,7 @@ export const getAllMaps = async (req, res) => {
           },
         };
       } else {
-<<<<<<< Updated upstream
         return null;
-=======
-        return null; 
->>>>>>> Stashed changes
       }
     }));
 
@@ -77,26 +71,6 @@ export const getMapById = async (req, res) => {
       WHERE koordinat.map_id = $1 
       GROUP BY maps.nama_lahan, maps.progress, maps.status, users.nama_lengkap 
       ORDER BY maps.nama_lahan`,
-=======
-    TRIM(maps.nama_lahan) AS nama_lahan,
-    maps.progress AS progress, 
-    maps.status AS status, 
-     ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
-    ARRAY_AGG(koordinat.koordinat) AS coordinates 
-FROM 
-    koordinat 
-JOIN 
-    maps ON maps.map_id = koordinat.map_id 
-WHERE 
-    koordinat.map_id = $1 
-GROUP BY 
-    maps.nama_lahan, 
-    maps.progress, 
-    maps.status 
-ORDER BY 
-    maps.nama_lahan;
-`,
->>>>>>> Stashed changes
         [mapId]
     );
 
@@ -110,11 +84,7 @@ ORDER BY
     const features = {
       type: "Feature",
       properties: {
-<<<<<<< Updated upstream
-        nama_lahan: data.nama_lahan.trim(),
-=======
         nama_lahan: data.nama_lahan.trim(), 
->>>>>>> Stashed changes
         status: data.status,
         progress: data.progress,
         nama_lengkap: data.nama_lengkap
