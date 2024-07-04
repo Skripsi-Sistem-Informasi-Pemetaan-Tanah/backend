@@ -58,7 +58,6 @@ export const getMapById = async (req, res) => {
   try {
     const result = await client.query(
         `SELECT 
-<<<<<<< Updated upstream
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress, 
         maps.status AS status, 
@@ -185,5 +184,43 @@ export const deleteMap = async (req, res) => {
     await client.query('ROLLBACK');
     client.release();
     return utilError(res, error);
+  }
+};
+
+export const getHistory = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const result = await client.query(`
+      SELECT users.username AS username, 
+             history.map_id AS map_id, 
+             TRIM(maps.nama_lahan) AS nama_lahan, 
+             maps.status AS status, 
+             history.old_coordinate AS old_coordinate, 
+             history.new_coordinate AS new_coordinate
+      FROM history 
+      JOIN maps ON maps.map_id = history.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      GROUP BY users.username, history.map_id, maps.nama_lahan, maps.status, history.old_coordinate, history.new_coordinate
+      ORDER BY history.map_id
+    `);
+
+    const results = result.rows.map((row) => {
+      return {
+        map_id: row.map_id,
+        username: row.username,
+        nama_lahan: row.nama_lahan,
+        old_coordinate: row.old_coordinate,
+        new_coordinate: row.new_coordinate,
+        status: row.status,
+      };
+    });
+
+    return utilData(res, 200, results);
+  } catch (error) {
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
   }
 };
