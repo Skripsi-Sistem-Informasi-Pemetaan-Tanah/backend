@@ -48,7 +48,7 @@ router.get('/totalRequest', verifyToken(2), totalRequest);
 router.get('/pendingRequest', verifyToken(2), pendingRequest);
 router.get('/requestPerDay', verifyToken(2), requestPerDay);
 
-router.get("/taskTable", verifyToken, taskTable);
+router.get("/taskTable", verifyToken(2), taskTable);
 
 
 //Mobile
