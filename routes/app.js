@@ -33,24 +33,39 @@ router.get("/token", refreshToken);
 // router.put('/forgotPassword', forgotPassword)
 // router.put('/resetPassword/', resetPassword)
 
-router.post('/editMap', verifyToken(2), editMap);
-router.post('/addMap', verifyToken(2), addMap);
-router.delete('/deleteMap', verifyToken(2), deleteMap);
-router.get('/getMapById/:mapId', verifyToken(2), getMapById);
+// router.post('/editMap', verifyToken(2), editMap);
+// router.post('/addMap', verifyToken(2), addMap);
+// router.delete('/deleteMap', verifyToken(2), deleteMap);
+// router.get('/getMapById/:mapId', verifyToken(2), getMapById);
 
-router.post('/validasiBerhasil', verifyToken(2), validasiBerhasil);
-router.post('/validasiDitolak', verifyToken(2), validasiDitolak);
-router.post('/cekValidasi/:mapId', verifyToken(2), cekValidasi);
-router.get('/getAllMaps', verifyToken(2), getAllMaps);
-router.get('/getHistory', verifyToken(2), getHistory);
+// router.post('/validasiBerhasil', verifyToken(2), validasiBerhasil);
+// router.post('/validasiDitolak', verifyToken(2), validasiDitolak);
+// router.post('/cekValidasi/:mapId', verifyToken(2), cekValidasi);
+// router.get('/getAllMaps', verifyToken(2), getAllMaps);
+// router.get('/getHistory', verifyToken(2), getHistory);
 
-router.get('/totalRequest', verifyToken(2), totalRequest);
-router.get('/pendingRequest', verifyToken(2), pendingRequest);
-router.get('/requestPerDay', verifyToken(2), requestPerDay);
+// router.get('/totalRequest', verifyToken(2), totalRequest);
+// router.get('/pendingRequest', verifyToken(2), pendingRequest);
+// router.get('/requestPerDay', verifyToken(2), requestPerDay);
 
-router.get("/taskTable", verifyToken(2), taskTable);
+// router.get("/taskTable", verifyToken(2), taskTable);
 
+router.post('/editMap', editMap);
+router.post('/addMap', addMap);
+router.delete('/deleteMap', deleteMap);
+router.get('/getMapById/:mapId',  getMapById);
 
+router.post('/validasiBerhasil',  validasiBerhasil);
+router.post('/validasiDitolak', validasiDitolak);
+router.post('/cekValidasi/:mapId', cekValidasi);
+router.get('/getAllMaps',  getAllMaps);
+router.get('/getHistory',  getHistory);
+
+router.get('/totalRequest', totalRequest);
+router.get('/pendingRequest',  pendingRequest);
+router.get('/requestPerDay', requestPerDay);
+
+router.get("/taskTable", taskTable);
 //Mobile
 router.get('/checkConnectionDatabase', checkConnectionDatabase);
 router.post('/saveUser', saveUser);

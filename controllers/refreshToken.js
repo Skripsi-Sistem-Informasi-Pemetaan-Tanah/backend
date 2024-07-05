@@ -5,7 +5,9 @@ import { utilMessage, utilData, utilError } from "../utils/message.js";
 export const refreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) return utilMessage(res, 401, "oii");
+    console.log("ini cookies")
+    console.log(req.cookies)
+    if (!refreshToken) return utilMessage(res, 401, "oii2");
     const dataUser = await User.findAll({
       where: {
         refresh_token: refreshToken,
