@@ -258,7 +258,7 @@ export const getAllLahanbyUserId = async (req, res) => {
                 .filter(p => p.map_id === map.map_id)
                 .map(p => ({
                     map_id: p.map_id,
-                    koordinat: ${p.koordinat[0]}, ${p.koordinat[1]},
+                    koordinat: `${p.koordinat[0]}, ${p.koordinat[1]}`,
                     image: p.image
         }));
             const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
@@ -299,7 +299,7 @@ export const getAllLahan = async (req, res) => {
                 .filter(p => p.map_id === map.map_id)
                 .map(p => ({
                     map_id: p.map_id,
-                    koordinat: ${p.koordinat[0]}, ${p.koordinat[1]},
+                    koordinat: `${p.koordinat[0]}, ${p.koordinat[1]}`,
                     image: p.image
         }));
             const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
