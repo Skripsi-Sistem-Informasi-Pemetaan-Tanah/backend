@@ -16,7 +16,17 @@ export const getAllMaps = async (req, res) => {
   try {
     //const result = await client.query("SELECT * FROM maps");
 
-    const result = await client.query("SELECT users.nama_lengkap AS name, koordinat.map_id AS map_id, TRIM(maps.nama_lahan) AS nama_lahan, maps.progress AS progress,maps.status AS status, ARRAY_AGG(koordinat.koordinat) AS koordinat FROM koordinat JOIN maps ON maps.map_id = koordinat.map_id JOIN users ON maps.user_id = users.user_id GROUP BY 1,2,3,4,5 ORDER BY 1");
+    const result = await client.query(`SELECT 
+      maps.nama_pemilik AS name, 
+      koordinat.map_id AS map_id, 
+      TRIM(maps.nama_lahan) AS nama_lahan, 
+      maps.progress AS progress,
+      maps.status AS status, 
+      ARRAY_AGG(koordinat.koordinat) AS koordinat 
+      FROM koordinat 
+      JOIN maps ON maps.map_id = koordinat.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      GROUP BY 1,2,3,4,5 ORDER BY 1`);
 
     const results = await Promise.all(result.rows.map(async (row) => {
       if (row.koordinat) {
@@ -28,7 +38,7 @@ export const getAllMaps = async (req, res) => {
             map_id: row.map_id,
             nama_lahan: row.nama_lahan.trim(),
             status: row.status,
-            //fieldtype: row.fieldtype.trim(),
+            progress: row.progress,
           },
           geometry: {
             coordinates: coordinates
@@ -63,12 +73,12 @@ export const getMapById = async (req, res) => {
         maps.status AS status, 
         ARRAY_AGG(koordinat.koordinat) AS coordinates,
         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
-        users.nama_lengkap AS nama_lengkap 
+        maps.nama_pemilik AS nama_pemilik 
       FROM koordinat 
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE koordinat.map_id = $1 
-      GROUP BY maps.nama_lahan, maps.progress, maps.status, users.nama_lengkap 
+      GROUP BY maps.nama_lahan, maps.progress, maps.status, maps.nama_pemilik 
       ORDER BY maps.nama_lahan`,
         [mapId]
     );
@@ -86,7 +96,7 @@ export const getMapById = async (req, res) => {
         nama_lahan: data.nama_lahan.trim(), 
         status: data.status,
         progress: data.progress,
-        nama_lengkap: data.nama_lengkap
+        nama_pemilik: data.nama_pemilik
       },
       geometry: {
         coordinates: data.coordinates,
@@ -201,8 +211,10 @@ export const getHistory = async (req, res) => {
       FROM history 
       JOIN maps ON maps.map_id = history.map_id 
       JOIN users ON maps.user_id = users.user_id 
+      WHERE history.old_coordinate IS NOT NULL 
+        AND history.new_coordinate IS NOT NULL
       GROUP BY users.username, history.map_id, maps.nama_lahan, maps.status, history.old_coordinate, history.new_coordinate
-      ORDER BY history.map_id
+      ORDER BY history.map_id DESC
     `);
 
     const results = result.rows.map((row) => {
