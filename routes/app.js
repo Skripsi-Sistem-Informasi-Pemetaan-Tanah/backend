@@ -6,7 +6,8 @@ import {
   deleteMap,
   getAllMaps,
   getMapById,
-  getHistory
+  getHistory,
+  getStatus
 } from "../controllers/map.js";
 import { validasiBerhasil, validasiDitolak, cekValidasi } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
@@ -14,6 +15,8 @@ import {
   totalRequest,
   pendingRequest,
   requestPerDay,
+  countVerified,
+  compareRequest
 } from "../controllers/dashboard.js";
 import { taskTable } from "../controllers/request.js";
 import { verifyToken } from "../middleware/verifyToken.js";
@@ -43,10 +46,13 @@ router.post('/validasiDitolak', verifyToken(2), validasiDitolak);
 router.post('/cekValidasi/:mapId', verifyToken(2), cekValidasi);
 router.get('/getAllMaps', verifyToken(2), getAllMaps);
 router.get('/getHistory', verifyToken(2), getHistory);
+router.get('/getStatus', verifyToken(2), getStatus);
 
 router.get('/totalRequest', verifyToken(2), totalRequest);
 router.get('/pendingRequest', verifyToken(2), pendingRequest);
 router.get('/requestPerDay', verifyToken(2), requestPerDay);
+router.get('/countVerified', verifyToken(2), countVerified);
+router.get('/compareRequest', verifyToken(2), compareRequest);
 
 router.get("/taskTable", verifyToken(2), taskTable);
 

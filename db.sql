@@ -196,18 +196,18 @@ EXECUTE FUNCTION log_koordinat_changes();
 CREATE OR REPLACE FUNCTION copy_to_verifikasi()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Insert the new or updated row into verifikasi table
-    INSERT INTO verifikasi (map_id, user_id, namaLahan, koordinat, status, progress, komentar, updated_at)
-    VALUES (NEW.map_id, NEW.user_id, NEW.namaLahan, NEW.koordinat, NEW.status, NEW.progress, NEW.komentar, NEW.updated_at)
-    ON CONFLICT (map_id) DO UPDATE
-    SET user_id = EXCLUDED.user_id,
-        map_id = EXCLUDED.map_id,
-        namaLahan = EXCLUDED.namaLahan,
-        koordinat = EXCLUDED.koordinat,
-        status = EXCLUDED.status,
-        progress = EXCLUDED.progress,
-        komentar = EXCLUDED.komentar,
-        updated_at = EXCLUDED.updated_at;
+    -- Insert the old and new values into verifikasi table
+    INSERT INTO verifikasi (map_id, user_id, nama_lahan, progress, komentar, old_status, new_status, updated_at)
+    VALUES (
+        NEW.map_id,
+		NEW.user_id,
+        NEW.nama_lahan,
+        NEW.progress,
+        NEW.komentar,
+        CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE OLD.status END,
+        NEW.status,
+        NOW()
+    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

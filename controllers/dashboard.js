@@ -28,6 +28,40 @@ export const pendingRequest = async (req, res) => {
   }
 };
 
+export const countVerified = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      "SELECT COUNT(*) FROM maps WHERE status = 2;"
+    );
+
+    const results = parseInt(result.rows[0].count);
+
+    return utilData(res, 200, { results });
+  } finally {
+    client.release();
+  }
+};
+
+export const compareRequest = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT 
+        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE)) AS current_month_count,
+        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE - interval '1 month')) AS last_month_count
+      FROM maps
+    `);
+
+    const currentMonthCount = result.rows[0].current_month_count;
+    const lastMonthCount = result.rows[0].last_month_count;
+    const results = currentMonthCount - lastMonthCount
+
+    return utilData(res, 200, { results });
+  } finally {
+    client.release();
+  }
+};
 // export const pendingRequest = async (req, res) => {
 //   try {
 //     const result = await Map.count({
