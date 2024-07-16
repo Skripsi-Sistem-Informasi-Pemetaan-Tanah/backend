@@ -28,7 +28,7 @@ export const pendingRequest = async (req, res) => {
   }
 };
 
-export const countVerified = async (req, res) => {
+export const verifiedRequest = async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(
@@ -43,7 +43,7 @@ export const countVerified = async (req, res) => {
   }
 };
 
-export const compareRequest = async (req, res) => {
+export const weeklyRequestChange = async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(`
