@@ -1,5 +1,5 @@
-import { utilMessage, utilData, utilError } from "../utils/message.js";
-import { pool } from "../config/db.js";
+import {utilMessage, utilData, utilError} from "../utils/message.js";
+import {pool} from "../config/db.js";
 import bodyParser from "body-parser";
 
 export const checkConnectionDatabase = async (req, res) => {
@@ -120,7 +120,6 @@ export const deleteUser = async (req, res) => {
         return utilError(res, error, 'Error deleting user and related data');
     }
 };
-
 
 
 export const saveLahan = async (req, res) => {
@@ -250,7 +249,7 @@ export const getAllLahanbyUserId = async (req, res) => {
         const patokanQuery = 'SELECT map_id, koordinat, image FROM koordinat';
         const patokanResult = await pool.query(patokanQuery);
 
-        const verifikasiQuery = 'SELECT map_id, komentar, progress, status, updated_at FROM verifikasi';
+        const verifikasiQuery = 'SELECT map_id, komentar, progress, new_status, updated_at FROM verifikasi';
         const verifikasiResult = await pool.query(verifikasiQuery);
 
         const lahanData = mapsResult.rows.map(map => {
@@ -260,7 +259,8 @@ export const getAllLahanbyUserId = async (req, res) => {
                     map_id: p.map_id,
                     koordinat: `${p.koordinat[0]}, ${p.koordinat[1]}`,
                     image: p.image
-        }));
+        }))
+            ;
             const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
 
             return {
@@ -275,7 +275,7 @@ export const getAllLahanbyUserId = async (req, res) => {
             };
         });
 
-        return utilData(res, 200, { lahan: lahanData });
+        return utilData(res, 200, {lahan: lahanData});
     } catch (error) {
         console.error('Error fetching lahan data for user:', error);
         return utilError(res, error, 'Error fetching lahan data for user');
@@ -291,7 +291,7 @@ export const getAllLahan = async (req, res) => {
         const patokanQuery = 'SELECT map_id, koordinat, image FROM koordinat';
         const patokanResult = await pool.query(patokanQuery);
 
-        const verifikasiQuery = 'SELECT map_id, komentar, progress, status, updated_at FROM verifikasi';
+        const verifikasiQuery = 'SELECT map_id, komentar, progress, new_status, updated_at FROM verifikasi';
         const verifikasiResult = await pool.query(verifikasiQuery);
 
         const lahanData = mapsResult.rows.map(map => {
@@ -301,7 +301,8 @@ export const getAllLahan = async (req, res) => {
                     map_id: p.map_id,
                     koordinat: `${p.koordinat[0]}, ${p.koordinat[1]}`,
                     image: p.image
-        }));
+        }))
+            ;
             const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
             return {
                 user_id: map.user_id,
@@ -316,7 +317,7 @@ export const getAllLahan = async (req, res) => {
             };
         });
 
-        return utilData(res, 200, { lahan: lahanData });
+        return utilData(res, 200, {lahan: lahanData});
     } catch (error) {
         console.error('Error fetching lahan data:', error);
         return utilError(res, error, 'Error fetching lahan data');
