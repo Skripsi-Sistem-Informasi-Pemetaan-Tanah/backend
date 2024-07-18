@@ -1,6 +1,5 @@
 import { utilMessage, utilData, utilError } from "../utils/message.js";
 import { pool } from "../config/db.js";
-import bodyParser from "body-parser";
 
 export const checkConnectionDatabase = async (req, res) => {
   try {
@@ -16,67 +15,6 @@ export const checkConnectionDatabase = async (req, res) => {
     return utilError(res, error, 'Failed to connect to the database');
   }
 };
-
-// export const saveUser = async (req, res) => {
-//   const user = req.body;
-
-//   try {
-//     const query = `
-//       INSERT INTO users (user_id, username, nama_lengkap, email, password, role, refresh_token, updated_at, created_at)
-//       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-//       ON CONFLICT (user_id) DO UPDATE SET
-//         username = EXCLUDED.username,
-//         nama_lengkap = EXCLUDED.nama_lengkap,
-//         email = EXCLUDED.email,
-//         password = EXCLUDED.password,
-//         role = EXCLUDED.role,
-//         refresh_token = EXCLUDED.refresh_token,
-//         updated_at = EXCLUDED.updated_at
-//     `;
-//     const currentTime = new Date();
-//     const values = [
-//       user.user_id, 
-//       user.username, 
-//       user.nama_lengkap, 
-//       user.email, 
-//       null, 
-//       2, 
-//       null, 
-//       currentTime, 
-//       currentTime
-//     ];
-
-//     await pool.query(query, values);
-//     return utilMessage(res, 200, 'User saved successfully');
-//   } catch (error) {
-//     console.error('Error saving user:', error);
-//     return utilError(res, error, 'Error saving user');
-//   }
-// };
-
-// export const updateUserField = async (req, res) => {
-//   const { user_id, username, nama_lengkap, email } = req.body;
-
-//   try {
-//     const fieldsToUpdate = {};
-//     if (username) fieldsToUpdate.username = username;
-//     if (nama_lengkap) fieldsToUpdate.nama_lengkap = nama_lengkap;
-//     if (email) fieldsToUpdate.email = email;
-
-//     fieldsToUpdate.updated_at = new Date();
-
-//     const setString = Object.keys(fieldsToUpdate).map((key, index) => `${key} = $${index + 2}`).join(', ');
-//     const values = [user_id, ...Object.values(fieldsToUpdate)];
-
-//     const query = `UPDATE users SET ${setString} WHERE user_id = $1`;
-
-//     await pool.query(query, values);
-//     return utilMessage(res, 200, 'User updated successfully');
-//   } catch (error) {
-//     console.error('Error updating user:', error);
-//     return utilError(res, error, 'Error updating user');
-//   }
-// };
 
 export const deleteUser = async (req, res) => {
   const userId = req.params.id;
@@ -107,10 +45,6 @@ export const deleteUser = async (req, res) => {
 
     const deleteUserQuery = 'DELETE FROM users WHERE user_id = $1';
     await pool.query(deleteUserQuery, [userId]);
-
-    // Delete from users table
-    // const deleteUserQuery = 'DELETE FROM users WHERE user_id = $1';
-    // await pool.query(deleteUserQuery, [userId]);
 
     // Commit the transaction
     await pool.query('COMMIT');
