@@ -73,7 +73,8 @@ export const getMapById = async (req, res) => {
         maps.status AS status, 
         ARRAY_AGG(koordinat.koordinat) AS coordinates,
         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
-        maps.nama_pemilik AS nama_pemilik 
+        maps.nama_pemilik AS nama_pemilik, 
+        maps.updated_at AS date
       FROM koordinat 
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
@@ -96,7 +97,8 @@ export const getMapById = async (req, res) => {
         nama_lahan: data.nama_lahan.trim(), 
         status: data.status,
         progress: data.progress,
-        nama_pemilik: data.nama_pemilik
+        nama_pemilik: data.nama_pemilik,
+        date: data.date
       },
       geometry: {
         coordinates: data.coordinates,
@@ -120,7 +122,7 @@ export const editMap = async (req, res) => {
   const { mapId, koor } = req.body;
   try {
     const editGeom = await client.query(
-      "UPDATE koordinat SET koordinat=$1 WHERE map_id=$2",
+      "UPDATE koordinat_verif SET koordinat_verif=$1 FROM maps WHERE map_id=$2",
       [koor, mapId]
     );
     client.release();

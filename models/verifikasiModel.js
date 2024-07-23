@@ -32,10 +32,13 @@ const Verifikasi = db.define(
       type: DataTypes.CHAR(30),
       required: true,
     },
-    status: {
+    old_status: {
       type: DataTypes.CHAR(25),
-      required: true,
-      defaultValue: "belum tervalidasi",
+      required: false,
+    },
+    new_status: {
+      type: DataTypes.CHAR(25),
+      required: false,
     },
     progress: {
       type: DataTypes.INTEGER,

@@ -15,6 +15,10 @@ const koordinat = db.define(
       type: DataTypes.ARRAY(DataTypes.DOUBLE),
       required: true,
     },
+    koordinat_verif: {
+      type: DataTypes.ARRAY(DataTypes.DOUBLE),
+      required: false,
+    },
     status: {
       type: DataTypes.INTEGER,
       required: true,
@@ -24,6 +28,10 @@ const koordinat = db.define(
         type: DataTypes.CHAR(100),
         required: false,
       },
+    komentar: {
+      type: DataTypes.TEXT,
+      required: false,
+    },
     map_id: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -31,6 +39,10 @@ const koordinat = db.define(
           model: Map,
           key: 'map_id'
         }
+      },
+      map_id_need_verif: {
+        type: DataTypes.ARRAY(DataTypes.DOUBLE),
+        required: false,
       },
       updated_at: {
         type: DataTypes.DATE,

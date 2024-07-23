@@ -22,6 +22,14 @@ const Map = db.define(
       type: DataTypes.CHAR(30),
       required: true,
     },
+    jenis_lahan: {
+      type: DataTypes.CHAR(30),
+      required: true,
+    },
+    deskripsi: {
+      type: DataTypes.TEXT,
+      required: false,
+    },
     koordinat: {
       type: DataTypes.JSONB,
       required: false,

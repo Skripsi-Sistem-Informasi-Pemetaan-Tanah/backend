@@ -49,31 +49,12 @@ export const cekValidasi = async (req, res) => {
     const { mapId } = req.params;
 
     // Check if coordinate count is greater than or equal to 3
-    const coordinateCount = await checkCoordinateCount(mapId);
-    if (coordinateCount >= 3) {
+    const coordinatesAreValid = await checkArround(mapId);
+    if (coordinatesAreValid) {
       // Update progress to 1 if condition is met
       await updateProgress(mapId, 25);
-
-      // Check if all coordinates have photos
-      const allPhotosAvailable = await checkPhoto(mapId);
-      if (allPhotosAvailable) {
-        // Update progress to 2 if condition is met
-        await updateProgress(mapId, 50);
-
-        // Check if any coordinate is close to another coordinate
-        const coordinatesAreValid = await checkArround(mapId);
-        if (coordinatesAreValid) {
-          // Update progress to 3 if condition is met
-          await updateProgress(mapId, 75); 
-          await addKomentar(mapId, "tervalidasi");
-        } else {
-          await addKomentar(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
-        }
-      } else {
-        await addKomentar(mapId, "Terdapat koordinat yang tidak memiliki foto patokan");
-      }
     } else {
-      await addKomentar(mapId, "Jumlah koordinat yang tersedia kurang dari 3");
+      await addKomentar(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
     }
 
     res.status(200).send("Validation completed successfully.");
@@ -83,46 +64,61 @@ export const cekValidasi = async (req, res) => {
   }
 };
 
-// Fungsi untuk memeriksa jumlah row koordinat pada setiap mapId
-const checkCoordinateCount = async (mapId) => {
-  try {
-    const client = await pool.connect();
+export const cekMapIDtoVerif = async (req, res) => {
+  const client = await pool.connect();
+  const { jumlahLahanBersinggungan, koordinat_id } = req.body;
 
-    // Query untuk menghitung jumlah koordinat berdasarkan mapId
-    const coordinateCountQuery = await client.query(
-      "SELECT COUNT(*) FROM koordinat WHERE map_id = $1",
+  try {
+    const fixedKoordinatResult = await client.query(
+      "SELECT koordinat FROM koordinat WHERE koordinat_id = $1",
+      [koordinat_id]
+    );
+    
+    if (fixedKoordinatResult.rows.length === 0) {
+      client.release();
+      return utilData(res, 404, { message: "Koordinat tidak ditemukan" });
+    }
+
+    const fixedKoordinat = {
+      longitude: fixedKoordinatResult.rows[0].koordinat[0],
+      latitude: fixedKoordinatResult.rows[0].koordinat[1]
+    };
+    // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
+    const findKoordinatResult = await client.query(
+      "SELECT map_id,koordinat FROM koordinat WHERE map_id != $1",
       [mapId]
     );
-    // Mengembalikan jumlah baris koordinat
-    const results = parseInt(coordinateCountQuery.rows[0].count, 10);
-    client.release();
-    return results;
-  } catch (error) {
-    // Tangani kesalahan jika terjadi saat menjalankan query
-    console.error("Error while checking coordinate count:", error);
-    throw error;
-  }
-};
+    const findKoordinat = findKoordinatResult.rows.map(row => ({
+      map_id: row.map_id,
+      longitude: row.koordinat[0],
+      latitude: row.koordinat[1]
+    }));
+    let distances = [];
+    // Hitung jarak dari koordinat yang diberikan ke setiap koordinat dari lahan lain
+    for (const koordinat of findKoordinat) {
+      const distance = calculateDistance(
+        fixedKoordinat.latitude,
+        fixedKoordinat.longitude,
+        koordinat.latitude,
+        koordinat.longitude
+      );
+      distances.push({ map_id: koordinat.map_id, distance });
+    }
 
-const checkPhoto = async (mapId) => {
-  try {
-    const client = await pool.connect();
+    // Urutkan jarak dan ambil sejumlah lahan terdekat yang diminta
+    distances.sort((a, b) => a.distance - b.distance);
+    const closestLands = distances.slice(0, jumlahLahanBersinggungan);
 
-    // Query untuk mengambil semua foto dari koordinat yang memiliki map_id tertentu
-    const photoCheckQuery = await client.query(
-      "SELECT image FROM koordinat WHERE map_id = $1",
-      [mapId]
-    );
-    // Mendapatkan hasil query
-    const images = photoCheckQuery.rows.map(row => row.image);
-    // Memeriksa apakah ada foto yang mengandung 'https' dalam URL-nya
-    const allPhotosValid = images.every(image => image && image.includes('https'));
+    // Ambil map_id dari lahan terdekat
+    const closestMapIds = closestLands.map(land => land.map_id);
+
     client.release();
-    return allPhotosValid;
+    return utilData(res, 200, { closestMapIds });
   } catch (error) {
-    // Tangani kesalahan jika terjadi saat menjalankan query
-    console.error("Error while checking photo:", error);
-    throw error;
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
   }
 };
 
@@ -135,61 +131,55 @@ const checkArround = async (mapId) => {
       "SELECT koordinat FROM koordinat WHERE map_id = $1",
       [mapId]
     );
-    const fixedKoordinat = fixedKoordinatResult.rows.map(row => ({ longitude: row.koordinat[0], latitude: row.koordinat[1], map_id: row.map_id }));
+    const fixedKoordinat = fixedKoordinatResult.rows.map(row => ({
+      longitude: row.koordinat[0],
+      latitude: row.koordinat[1]
+    }));
 
     // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
     const findKoordinatResult = await client.query(
       "SELECT koordinat FROM koordinat WHERE map_id != $1",
       [mapId]
     );
-    const findKoordinat = findKoordinatResult.rows.map(row => ({ longitude: row.koordinat[0], latitude: row.koordinat[1], map_id: row.map_id }));
-    
-    // Check if all findKoordinat have the same map_id as fixedKoordinat
-    const allSameMapId = findKoordinat.every(koordinat => koordinat.map_id === mapId);
-    if (allSameMapId) {
-      client.release();
-      return false;
-    }
-    
-    let isValidated = false;
+    const findKoordinat = findKoordinatResult.rows.map(row => ({
+      longitude: row.koordinat[0],
+      latitude: row.koordinat[1]
+    }));
+
+    let validatedCount = 0;
 
     // Lakukan iterasi pada setiap titik koordinat yang akan diperiksa
     for (const koordinat1 of fixedKoordinat) {
       const lon1 = koordinat1.longitude;
       const lat1 = koordinat1.latitude;
-      console.log(lon1)
-      console.log(lat1)
-      console.log(fixedKoordinat)
 
       // Lakukan iterasi pada setiap titik koordinat yang akan dibandingkan jaraknya
       for (const koordinat2 of findKoordinat) {
         const lon2 = koordinat2.longitude;
         const lat2 = koordinat2.latitude;
-        console.log(lon2)
-        console.log(lat2)
-        console.log(findKoordinat)
 
         // Hitung jarak antara kedua titik koordinat
         const distance = calculateDistance(lat1, lon1, lat2, lon2);
-        console.log ('jarak = ', distance)
-        if (distance < 1 && distance >= 0) {
-          isValidated = true;
-          console.log("titik", koordinat2, "tervalidasi oleh titik lain");
+        if (distance < 1) {
+          validatedCount++;
+          console.log("Titik", koordinat2, "tervalidasi oleh titik lain");
           break; // Keluar dari loop saat sudah ditemukan satu titik yang berdekatan
         }
       }
-      // Jika tidak ada titik yang berdekatan dengan titik saat ini, kembalikan false
-      if (!isValidated) {
+
+      // Jika telah ditemukan dua titik yang valid, kembalikan true
+      if (validatedCount >= 2) {
         client.release();
-        return false;
+        return true;
       }
     }
-    // Jika semua titik telah divalidasi, kembalikan true
+
+    // Jika tidak ada dua titik yang berdekatan dengan titik lain, kembalikan false
     client.release();
-    return true;
+    return false;
   } catch (error) {
     // Tangani kesalahan jika terjadi saat menjalankan query
-    console.error("Error while checking arround:", error);
+    console.error("Error while checking around:", error);
     throw error;
   }
 };
@@ -246,3 +236,4 @@ const addKomentar = async (mapId, newKomentar) => {
     throw error;
   }
 };
+

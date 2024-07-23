@@ -49,16 +49,26 @@ export const weeklyRequestChange = async (req, res) => {
   try {
     const result = await client.query(`
       SELECT 
-        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE)) AS current_month_count,
-        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE - interval '1 month')) AS last_month_count
-      FROM maps
+        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE)) AS current_month_count_request,
+        COUNT(*) FILTER (WHERE date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE - interval '1 month')) AS last_month_count_request,
+        COUNT(*) FILTER (WHERE status = 2 AND date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE)) AS current_month_count_verified,
+        COUNT(*) FILTER (WHERE status = 2 AND date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE - interval '1 month')) AS last_month_count_verified,
+        COUNT(*) FILTER (WHERE created_at = updated_at AND date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE)) AS current_month_count_pending,
+        COUNT(*) FILTER (WHERE created_at = updated_at AND date_trunc('month', updated_at) = date_trunc('month', CURRENT_DATE - interval '1 month')) AS last_month_count_pending
+        FROM maps
     `);
 
-    const currentMonthCount = result.rows[0].current_month_count;
-    const lastMonthCount = result.rows[0].last_month_count;
-    const results = currentMonthCount - lastMonthCount
+    const currentMonthCountRequest = result.rows[0].current_month_count_request;
+    const lastMonthCountRequest = result.rows[0].last_month_count_request;
+    const currentMonthCountVerified = result.rows[0].current_month_count_verified;
+    const lastMonthCountVerified = result.rows[0].last_month_count_verified;
+    const currentMonthCountPending = result.rows[0].current_month_count_pending;
+    const lastMonthCountPending = result.rows[0].last_month_count_vpending;
+    const resultRequest = currentMonthCountRequest - lastMonthCountRequest;
+    const resultVerified = currentMonthCountVerified - lastMonthCountVerified;
+    const resultPending = currentMonthCountPending - lastMonthCountPending;
 
-    return utilData(res, 200, { results });
+    return utilData(res, 200, { resultRequest: resultRequest, resultVerified: resultVerified, resultPending: resultPending });
   } finally {
     client.release();
   }

@@ -32,6 +32,10 @@ const History = db.define(
       required: true,
       defaultValue: "belum tervalidasi",
     },
+    old_status: {
+      type: DataTypes.CHAR(25),
+      required: false,
+    },
     updated_at: {
       type: DataTypes.DATE,
       required: true,
