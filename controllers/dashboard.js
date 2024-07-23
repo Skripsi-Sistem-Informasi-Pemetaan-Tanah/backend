@@ -63,7 +63,7 @@ export const weeklyRequestChange = async (req, res) => {
     const currentMonthCountVerified = result.rows[0].current_month_count_verified;
     const lastMonthCountVerified = result.rows[0].last_month_count_verified;
     const currentMonthCountPending = result.rows[0].current_month_count_pending;
-    const lastMonthCountPending = result.rows[0].last_month_count_vpending;
+    const lastMonthCountPending = result.rows[0].last_month_count_pending;
     const resultRequest = currentMonthCountRequest - lastMonthCountRequest;
     const resultVerified = currentMonthCountVerified - lastMonthCountVerified;
     const resultPending = currentMonthCountPending - lastMonthCountPending;
