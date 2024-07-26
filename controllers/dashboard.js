@@ -44,7 +44,7 @@ export const verifiedRequest = async (req, res) => {
   }
 };
 
-export const weeklyRequestChange = async (req, res) => {
+export const monthlyRequestChange = async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(`

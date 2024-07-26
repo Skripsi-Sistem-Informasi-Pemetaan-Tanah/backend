@@ -16,7 +16,7 @@ import {
   pendingRequest,
   requestPerDay,
   verifiedRequest,
-  weeklyRequestChange
+  monthlyRequestChange
 } from "../controllers/dashboard.js";
 import { taskTable } from "../controllers/request.js";
 import { verifyToken } from "../middleware/verifyToken.js";
@@ -52,7 +52,7 @@ router.get("/token", refreshToken);
 // router.get('/pendingRequest', verifyToken(2), pendingRequest);
 // router.get('/requestPerDay', verifyToken(2), requestPerDay);
 // router.get('/verifiedRequest', verifyToken(2), verifiedRequest);
-// router.get('/weeklyRequestChange', verifyToken(2), weeklyRequestChange);
+// router.get('/monthlyRequestChange', verifyToken(2), monthlyRequestChange);
 //
 // router.get("/taskTable", verifyToken(2), taskTable);
 
@@ -71,7 +71,7 @@ router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest',  pendingRequest);
 router.get('/requestPerDay', requestPerDay);
 router.get('/verifiedRequest', verifiedRequest);
-router.get('/weeklyRequestChange', weeklyRequestChange);
+router.get('/monthlyRequestChange', monthlyRequestChange);
 
 router.get("/taskTable", taskTable);
 //Mobile
