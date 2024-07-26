@@ -111,7 +111,12 @@ export const cekMapIDtoVerif = async (req, res) => {
 
     // Ambil map_id dari lahan terdekat
     const closestMapIds = closestLands.map(land => land.map_id);
-
+    // Update tabel koordinat dengan closestMapIds
+    await client.query(
+      "UPDATE koordinat SET map_id_need_verif = $1 WHERE koordinat_id = $2",
+      [closestMapIds, koordinat_id]
+    );
+    
     client.release();
     return utilData(res, 200, { closestMapIds });
   } catch (error) {
@@ -226,6 +231,23 @@ const addKomentar = async (mapId, newKomentar) => {
 
     // Query untuk mengupdate komentar pada tabel maps
     await client.query("UPDATE maps SET komentar = $1 WHERE map_id = $2", [
+      newKomentar,
+      mapId,
+    ]);
+    client.release();
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    console.error("Error while updating comment:", error);
+    throw error;
+  }
+};
+
+const addKomentarKoordinat = async (mapId, newKomentar) => {
+  try {
+    const client = await pool.connect();
+
+    // Query untuk mengupdate komentar pada tabel maps
+    await client.query("UPDATE koordinat SET komentar = $1 WHERE map_id = $2", [
       newKomentar,
       mapId,
     ]);

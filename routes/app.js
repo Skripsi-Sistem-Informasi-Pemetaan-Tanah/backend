@@ -7,6 +7,7 @@ import {
   getAllMaps,
   getMapById,
   getHistory,
+  getValidator,
   getStatus
 } from "../controllers/map.js";
 import { validasiBerhasil, validasiDitolak, cekValidasi } from "../controllers/validasi.js";
@@ -60,7 +61,7 @@ router.post('/editMap', editMap);
 router.post('/addMap', addMap);
 router.delete('/deleteMap', deleteMap);
 router.get('/getMapById/:mapId',  getMapById);
-
+router.get('/getValidator/:mapId',  getValidator);
 router.post('/validasiBerhasil',  validasiBerhasil);
 router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
