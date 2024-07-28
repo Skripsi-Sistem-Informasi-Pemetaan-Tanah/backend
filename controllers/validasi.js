@@ -225,13 +225,34 @@ const updateProgress = async (mapId, newProgress) => {
   }
 };
 
-const addKomentar = async (mapId, newKomentar) => {
+export const addKomentar = async (req,res) => {
+  try {
+    const client = await pool.connect();
+    const { mapId, Komentar } = req.body;
+    // Query untuk mengupdate komentar pada tabel maps
+    const addKomentar = await client.query("UPDATE maps SET komentar = $1 WHERE map_id = $2", [
+      Komentar,
+      mapId,
+    ]);
+    client.release();
+    if(addKomentar){
+      return utilMessage(res, 200, "Komentar berhasil ditambahkan");
+    }else{
+      return utilMessage(res, 403, "Komentar gagal ditambahkan");
+    }
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    utilError(res, error)
+  }
+};
+
+const addKomentar = async (mapId, Komentar) => {
   try {
     const client = await pool.connect();
 
     // Query untuk mengupdate komentar pada tabel maps
     await client.query("UPDATE maps SET komentar = $1 WHERE map_id = $2", [
-      newKomentar,
+      Komentar,
       mapId,
     ]);
     client.release();
@@ -242,13 +263,34 @@ const addKomentar = async (mapId, newKomentar) => {
   }
 };
 
-const addKomentarKoordinat = async (mapId, newKomentar) => {
+export const addKomentarKoordinat = async (req,res) => {
+  try {
+    const client = await pool.connect();
+    const { mapId, Komentar } = req.body;
+    // Query untuk mengupdate komentar pada tabel maps
+    const addKomentar = await client.query("UPDATE koordinat SET komentar = $1 WHERE map_id = $2", [
+      Komentar,
+      mapId,
+    ]);
+    client.release();
+    if(addKomentar){
+      return utilMessage(res, 200, "Komentar berhasil ditambahkan");
+    }else{
+      return utilMessage(res, 403, "Komentar gagal ditambahkan");
+    }
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    utilError(res, error)
+  }
+};
+
+const addKomentarKoordinat = async (mapId, Komentar) => {
   try {
     const client = await pool.connect();
 
     // Query untuk mengupdate komentar pada tabel maps
     await client.query("UPDATE koordinat SET komentar = $1 WHERE map_id = $2", [
-      newKomentar,
+      Komentar,
       mapId,
     ]);
     client.release();

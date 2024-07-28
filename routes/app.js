@@ -10,7 +10,7 @@ import {
   getValidator,
   getStatus
 } from "../controllers/map.js";
-import { validasiBerhasil, validasiDitolak, cekValidasi } from "../controllers/validasi.js";
+import { validasiBerhasil, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekMapIDtoVerif } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
 import {
   totalRequest,
@@ -67,6 +67,9 @@ router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
 router.get('/getAllMaps',  getAllMaps);
 router.get('/getHistory',  getHistory);
+router.post('/addKomentar',  addKomentar);
+router.post('/addKomentarKoordinat',  addKomentarKoordinat);
+router.get('/cekMapIdtoVerif',  cekMapIDtoVerif);
 
 router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest',  pendingRequest);
