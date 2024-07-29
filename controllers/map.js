@@ -62,73 +62,6 @@ export const getAllMaps = async (req, res) => {
   }
 };
 
-// export const getMapById = async (req, res) => {
-//   const client = await pool.connect();
-//   const { mapId } = req.params;
-//   try {
-//     const result = await client.query(
-//         `SELECT 
-//         TRIM(maps.nama_lahan) AS nama_lahan, 
-//         maps.progress AS progress, 
-//         maps.status AS status, 
-//         koordinat.koordinat_id AS koordinat_id,
-//         ARRAY_AGG(koordinat.koordinat) AS coordinates,
-//         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
-//         maps.nama_pemilik AS nama_pemilik, 
-//         maps.updated_at AS date
-//       FROM koordinat 
-//       JOIN maps ON maps.map_id = koordinat.map_id 
-//       JOIN users ON maps.user_id = users.user_id 
-//       WHERE koordinat.map_id = $1 
-//       GROUP BY maps.nama_lahan, maps.progress, maps.status, maps.nama_pemilik, maps.updated_at, koordinat.koordinat_id
-//       ORDER BY maps.nama_lahan`,
-//         [mapId]
-//     );
-
-//     const data = result.rows;
-
-//     if (data.length === 0) {
-//       // Handle case where map data is not found
-//       return utilData(res, 404, { message: "Map not found" });
-//     }
-
-//     const coordinates = data.map(row => ({
-//         coordinates: row.coordinates,
-//         koordinat_id: row.koordinat_id,
-//         image: row.image
-//     }));
-
-//     // const geom = {
-//     //   geometry: {
-//     //     type: "Polygon",
-//     //     coordinates: [coordinates.find(coord => coord.geometry.koordinat_id === row.koordinat_id).geometry.coordinates]
-//     //   }
-//     // };
-//     const geojson = {
-//       type: "Feature",
-//       properties: {
-//         nama_lahan: data.nama_lahan, 
-//         status: data.status,
-//         progress: data.progress,
-//         nama_pemilik: data.nama_pemilik,
-//         date: data.date
-//       },
-//       coordinates: data.map(row => ({
-//         coordinates: row.coordinates,
-//         koordinat_id: row.koordinat_id,
-//         image: row.image
-//     }))
-//     };
-//     console.log("hit API ID");
-//     return utilData(res, 200, { geojson });
-//   } catch (error) {
-//     // Handle errors
-//     console.error("Error:", error.message);
-//     return utilData(res, 500, { message: "Internal Server Error" });
-//   } finally {
-//     client.release();
-//   }
-// };
 export const getMapById = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.params;
@@ -138,7 +71,7 @@ export const getMapById = async (req, res) => {
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress, 
         maps.status AS status, 
-        koordinat.koordinat_id AS koordinat_id,
+        ARRAY_AGG(koordinat.koordinat_id) AS koordinat_id,
         ARRAY_AGG(koordinat.koordinat) AS coordinates,
         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
         maps.nama_pemilik AS nama_pemilik, 
@@ -147,18 +80,30 @@ export const getMapById = async (req, res) => {
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE koordinat.map_id = $1 
-      GROUP BY maps.nama_lahan, maps.progress, maps.status, maps.nama_pemilik, maps.updated_at, koordinat.koordinat_id
+      GROUP BY maps.nama_lahan, maps.progress, maps.status, maps.nama_pemilik, maps.updated_at
       ORDER BY maps.nama_lahan`,
         [mapId]
     );
 
     const data = result.rows[0];
 
-    if (!data) {
+    if (data.length === 0) {
       // Handle case where map data is not found
       return utilData(res, 404, { message: "Map not found" });
     }
 
+    // const coordinates = data.map(row => ({
+    //     coordinates: row.coordinates,
+    //     koordinat_id: row.koordinat_id,
+    //     image: row.image
+    // }));
+
+    // const geom = {
+    //   geometry: {
+    //     type: "Polygon",
+    //     coordinates: [coordinates.find(coord => coord.geometry.koordinat_id === row.koordinat_id).geometry.coordinates]
+    //   }
+    // };
     const features = {
       type: "Feature",
       properties: {
@@ -170,11 +115,10 @@ export const getMapById = async (req, res) => {
       },
       geometry: {
         coordinates: data.coordinates,
-        image: data.image,
         koordinat_id: data.koordinat_id,
-      }
+        image: data.image
+    }
     };
-
     console.log("hit API ID");
     return utilData(res, 200, { features });
   } catch (error) {
@@ -183,8 +127,65 @@ export const getMapById = async (req, res) => {
     return utilData(res, 500, { message: "Internal Server Error" });
   } finally {
     client.release();
-  }
+  }
 };
+
+
+// export const getMapById = async (req, res) => {
+//   const client = await pool.connect();
+//   const { mapId } = req.params;
+//   try {
+//     const result = await client.query(
+//         `SELECT 
+//         TRIM(maps.nama_lahan) AS nama_lahan, 
+//         maps.progress AS progress, 
+//         maps.status AS status, 
+//         ARRAY_AGG(koordinat.koordinat) AS coordinates,
+//         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
+//         maps.nama_pemilik AS nama_pemilik, 
+//         maps.updated_at AS date
+//       FROM koordinat 
+//       JOIN maps ON maps.map_id = koordinat.map_id 
+//       JOIN users ON maps.user_id = users.user_id 
+//       WHERE koordinat.map_id = $1 
+//       GROUP BY maps.nama_lahan, maps.progress, maps.status, maps.nama_pemilik, maps.updated_at
+//       ORDER BY maps.nama_lahan`,
+//         [mapId]
+//     );
+
+//     const data = result.rows[0];
+
+//     if (!data) {
+//       // Handle case where map data is not found
+//       return utilData(res, 404, { message: "Map not found" });
+//     }
+
+//     const features = {
+//       type: "Feature",
+//       properties: {
+//         nama_lahan: data.nama_lahan.trim(), 
+//         status: data.status,
+//         progress: data.progress,
+//         nama_pemilik: data.nama_pemilik,
+//         date: data.date
+//       },
+//       geometry: {
+//         coordinates: data.coordinates,
+//         image: data.image
+//       }
+//     };
+
+//     console.log("hit API ID");
+//     return utilData(res, 200, { features });
+//   } catch (error) {
+//     // Handle errors
+//     console.error("Error:", error.message);
+//     return utilData(res, 500, { message: "Internal Server Error" });
+//   } finally {
+//     client.release();
+//   }
+// };
+
 export const getValidator = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.params;
