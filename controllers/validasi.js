@@ -66,12 +66,12 @@ export const cekValidasi = async (req, res) => {
 
 export const cekMapIDtoVerif = async (req, res) => {
   const client = await pool.connect();
-  const { jumlahLahanBersinggungan, koordinat_id } = req.body;
+  const { jumlahLahanBersinggungan, koordinatId } = req.body;
 
   try {
     const fixedKoordinatResult = await client.query(
-      "SELECT koordinat FROM koordinat WHERE koordinat_id = $1",
-      [koordinat_id]
+      "SELECT koordinat, map_id FROM koordinat WHERE koordinat_id = $1",
+      [koordinatId]
     );
     
     if (fixedKoordinatResult.rows.length === 0) {
@@ -81,7 +81,8 @@ export const cekMapIDtoVerif = async (req, res) => {
 
     const fixedKoordinat = {
       longitude: fixedKoordinatResult.rows[0].koordinat[0],
-      latitude: fixedKoordinatResult.rows[0].koordinat[1]
+      latitude: fixedKoordinatResult.rows[0].koordinat[1],
+      mapId: fixedKoordinatResult.rows[0].map_id
     };
     // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
     const findKoordinatResult = await client.query(
@@ -114,7 +115,7 @@ export const cekMapIDtoVerif = async (req, res) => {
     // Update tabel koordinat dengan closestMapIds
     await client.query(
       "UPDATE koordinat SET map_id_need_verif = $1 WHERE koordinat_id = $2",
-      [closestMapIds, koordinat_id]
+      [closestMapIds, koordinatId]
     );
     
     client.release();
