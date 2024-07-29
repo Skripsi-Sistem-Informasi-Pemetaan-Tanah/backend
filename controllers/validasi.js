@@ -54,7 +54,7 @@ export const cekValidasi = async (req, res) => {
       // Update progress to 1 if condition is met
       await updateProgress(mapId, 25);
     } else {
-      await addKomentar(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
+      await addKomentars(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
     }
 
     res.status(200).send("Validation completed successfully.");
@@ -246,7 +246,7 @@ export const addKomentar = async (req,res) => {
   }
 };
 
-const addKomentar = async (mapId, Komentar) => {
+const addKomentars = async (mapId, Komentar) => {
   try {
     const client = await pool.connect();
 
@@ -266,11 +266,11 @@ const addKomentar = async (mapId, Komentar) => {
 export const addKomentarKoordinat = async (req,res) => {
   try {
     const client = await pool.connect();
-    const { mapId, Komentar } = req.body;
+    const { koordinatId, Komentar } = req.body;
     // Query untuk mengupdate komentar pada tabel maps
     const addKomentar = await client.query("UPDATE koordinat SET komentar = $1 WHERE map_id = $2", [
       Komentar,
-      mapId,
+      koordinatId,
     ]);
     client.release();
     if(addKomentar){
@@ -284,7 +284,7 @@ export const addKomentarKoordinat = async (req,res) => {
   }
 };
 
-const addKomentarKoordinat = async (mapId, Komentar) => {
+const addKomentarKoordinats = async (mapId, Komentar) => {
   try {
     const client = await pool.connect();
 

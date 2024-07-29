@@ -140,7 +140,9 @@ export const getValidator = async (req, res) => {
     );
 
     const data = result.rows[0];
-
+    if (!result.coordinates){
+      return utilData(res, 404, { message: "Koordinat_verif not found" });
+    }
     if (!data) {
       // Handle case where map data is not found
       return utilData(res, 404, { message: "Map not found" });
@@ -177,7 +179,7 @@ export const editMap = async (req, res) => {
   const { mapId, koor } = req.body;
   try {
     const editGeom = await client.query(
-      "UPDATE koordinat_verif SET koordinat_verif=$1 FROM maps WHERE map_id=$2",
+      "UPDATE koordinat SET koordinat_verif=$1 WHERE map_id=$2",
       [koor, mapId]
     );
     client.release();
