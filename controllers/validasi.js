@@ -75,7 +75,7 @@ export const cekMapIDtoVerif = async (req, res) => {
     );
     
     if (fixedKoordinatResult.rows.length === 0) {
-      client.release();
+      
       return utilData(res, 404, { message: "Koordinat tidak ditemukan" });
     }
 
@@ -87,7 +87,7 @@ export const cekMapIDtoVerif = async (req, res) => {
     // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
     const findKoordinatResult = await client.query(
       "SELECT map_id,koordinat FROM koordinat WHERE map_id != $1",
-      [mapId]
+      [fixedKoordinat.mapId]
     );
     const findKoordinat = findKoordinatResult.rows.map(row => ({
       map_id: row.map_id,
@@ -117,8 +117,7 @@ export const cekMapIDtoVerif = async (req, res) => {
       "UPDATE koordinat SET map_id_need_verif = $1 WHERE koordinat_id = $2",
       [closestMapIds, koordinatId]
     );
-    
-    client.release();
+  
     return utilData(res, 200, { closestMapIds });
   } catch (error) {
     console.error("Error:", error.message);
