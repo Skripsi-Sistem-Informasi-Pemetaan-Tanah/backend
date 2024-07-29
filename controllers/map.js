@@ -71,6 +71,7 @@ export const getMapById = async (req, res) => {
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress, 
         maps.status AS status, 
+        koordinat.koordinat_id AS koordinat_id,
         ARRAY_AGG(koordinat.koordinat) AS coordinates,
         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
         maps.nama_pemilik AS nama_pemilik, 
@@ -102,6 +103,7 @@ export const getMapById = async (req, res) => {
       },
       geometry: {
         coordinates: data.coordinates,
+        koordinat_id: koordinat_id,
         image: data.image
       }
     };
