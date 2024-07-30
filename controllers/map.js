@@ -196,6 +196,7 @@ export const getValidator = async (req, res) => {
         maps.progress AS progress, 
         maps.status AS status, 
         ARRAY_AGG(koordinat.koordinat_verif) AS coordinates,
+        ARRAY_AGG(koordinat.status) AS status_coordinates,
         ARRAY_AGG(translate(koordinat.image, CHR(255), '')) AS image,
         maps.nama_pemilik AS nama_pemilik, 
         maps.updated_at AS date
@@ -209,7 +210,7 @@ export const getValidator = async (req, res) => {
     );
 
     const data = result.rows[0];
-    if (!result.coordinates){
+    if (!data.coordinates){
       return utilData(res, 404, { message: "Koordinat_verif not found" });
     }
     if (!data) {
@@ -228,7 +229,8 @@ export const getValidator = async (req, res) => {
       },
       geometry: {
         coordinates: data.coordinates,
-        image: data.image
+        image: data.image,
+        status_coordinate: data.status_coordinates
       }
     };
 

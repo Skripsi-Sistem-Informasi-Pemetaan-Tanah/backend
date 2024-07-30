@@ -66,8 +66,8 @@ export const cekValidasi = async (req, res) => {
 
 export const cekMapIDtoVerif = async (req, res) => {
   const client = await pool.connect();
-  const { jumlahLahanBersinggungan, koordinatId } = req.body;
-
+  const { jumlahLahanBersinggungan, perkiraanLahanBersinggungan, koordinatId } = req.body;
+  const lahanBelumDiisi = perkiraanLahanBersinggungan - jumlahLahanBersinggungan
   try {
     const fixedKoordinatResult = await client.query(
       "SELECT koordinat, map_id FROM koordinat WHERE koordinat_id = $1",
@@ -112,6 +112,9 @@ export const cekMapIDtoVerif = async (req, res) => {
 
     // Ambil map_id dari lahan terdekat
     const closestMapIds = closestLands.map(land => land.map_id);
+    for (let i = 0; i < lahanBelumDiisi; i++) {
+      closestMapIds.push(null);
+    }
     // Update tabel koordinat dengan closestMapIds
     await client.query(
       "UPDATE koordinat SET map_id_need_verif = $1 WHERE koordinat_id = $2",
