@@ -191,7 +191,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create the trigger
-CREATE TRIGGER after_koordinat_insert_update
+CREATE OR REPLACE TRIGGER after_koordinat_insert_update
 AFTER INSERT OR UPDATE ON koordinat
 FOR EACH ROW
 EXECUTE FUNCTION log_koordinat_changes();
@@ -215,7 +215,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER after_maps_insert_update
+CREATE OR REPLACE TRIGGER after_maps_insert_update
 AFTER INSERT OR UPDATE ON maps
 FOR EACH ROW
 EXECUTE FUNCTION copy_to_verifikasi();
