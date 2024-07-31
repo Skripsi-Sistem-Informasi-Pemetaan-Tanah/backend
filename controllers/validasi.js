@@ -270,8 +270,8 @@ export const addKomentarKoordinat = async (req,res) => {
   try {
     const client = await pool.connect();
     const { koordinatId, Komentar } = req.body;
-    // Query untuk mengupdate komentar pada tabel maps
-    const addKomentar = await client.query("UPDATE koordinat SET komentar = $1 WHERE map_id = $2", [
+    // Query untuk mengupdate komentar pada tabel koordinat
+    const addKomentar = await client.query("UPDATE koordinat SET komentar = $1 WHERE koordinat_id = $2", [
       Komentar,
       koordinatId,
     ]);

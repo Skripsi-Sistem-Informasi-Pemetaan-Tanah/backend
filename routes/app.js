@@ -59,7 +59,7 @@ router.get("/token", refreshToken);
 
 router.post('/editMap', editMap);
 router.post('/addMap', addMap);
-router.delete('/deleteMap', deleteMap);
+router.delete('/deleteMap/:mapId', deleteMap);
 router.get('/getMapById/:mapId',  getMapById);
 router.get('/getValidator/:mapId',  getValidator);
 router.post('/validasiBerhasil',  validasiBerhasil);
@@ -67,6 +67,7 @@ router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
 router.get('/getAllMaps',  getAllMaps);
 router.get('/getHistory',  getHistory);
+router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
 router.get('/cekMapIdtoVerif',  cekMapIDtoVerif);
