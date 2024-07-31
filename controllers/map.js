@@ -218,6 +218,14 @@ export const getValidator = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.params;
   try {
+    const test = await client.query(
+      `SELECT koordinat.koordinat_verif FROM koordinat WHERE map_id = $1`, [mapId]
+    )
+
+    if (test.rows.length === 0 || test.rows.every(row => row.koordinat_verif === null)) {
+      return utilData(res, 404, { message: "Koordinat verif not found" });
+    }
+
     const result = await client.query(
       `WITH sorted_koordinat AS (
         SELECT 
@@ -258,6 +266,7 @@ export const getValidator = async (req, res) => {
 
     const data = result.rows[0];
 
+    // Jika coordinates berisi null, kembalikan pesan yang sesuai
     if (!data.coordinates) {
       return utilData(res, 404, { message: "Koordinat_verif not found" });
     }
