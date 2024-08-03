@@ -389,13 +389,15 @@ export const getHistory = async (req, res) => {
              history.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
              maps.status AS status, 
+             history.komentar AS komentar,
              history.old_coordinate AS old_coordinate, 
              history.new_coordinate AS new_coordinate,
              history.updated_at AS updated_at
       FROM history 
       JOIN maps ON maps.map_id = history.map_id 
       JOIN users ON maps.user_id = users.user_id 
-      GROUP BY maps.nama_pemilik, history.koordinat_id, maps.nama_lahan, maps.status, history.old_coordinate, history.new_coordinate, history.updated_at
+      WHERE history.old_coordinate IS NOT NULL
+      GROUP BY maps.nama_pemilik, history.komentar, history.koordinat_id, maps.nama_lahan, maps.status, history.old_coordinate, history.new_coordinate, history.updated_at
       ORDER BY history.koordinat_id DESC
     `);
 
@@ -406,11 +408,11 @@ export const getHistory = async (req, res) => {
         nama_lahan: row.nama_lahan,
         old_coordinate: row.old_coordinate,
         new_coordinate: row.new_coordinate,
+        komentar: row.komentar,
         status: row.status,
         updated_at: row.updated_at
       };
     });
-
     return utilData(res, 200, results);
   } catch (error) {
     console.error("Error:", error.message);
@@ -422,7 +424,6 @@ export const getHistory = async (req, res) => {
 
 export const getStatus = async (req, res) => {
   const client = await pool.connect();
-
   try {
     const result = await client.query(`
       SELECT maps.nama_pemilik AS nama_pemilik, 
