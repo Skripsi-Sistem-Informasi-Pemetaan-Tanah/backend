@@ -301,18 +301,28 @@ export const getValidator = async (req, res) => {
 export const editMap = async (req, res) => {
   const client = await pool.connect();
   const { koordinatId, koor } = req.body;
+
   try {
+    // Memisahkan latitude dan longitude dari string koor
+    const [latitude, longitude] = koor.split(',');
+
+    // Membuat format koordinat yang diinginkan {latitude,longitude}
+    const formattedKoor = `{${latitude},${longitude}}`;
+
     const editGeom = await client.query(
       "UPDATE koordinat SET koordinat_verif=$1 WHERE koordinat_id=$2",
-      [koor, koordinatId]
+      [formattedKoor, koordinatId]
     );
+
     client.release();
+
     if (editGeom)
       return utilMessage(
         res,
         200,
         "Data dengan id " + koordinatId + " berhasil diubah"
       );
+
     return utilMessage(res, 403, "Data gagal diubah");
   } catch (err) {
     return utilError(res, err);
@@ -447,6 +457,79 @@ export const getStatus = async (req, res) => {
         nama_lahan: row.nama_lahan,
         old_status: row.old_status,
         new_status: row.new_status,
+        updated_at: row.updated_at,
+      };
+    });
+
+    return utilData(res, 200, results);
+  } catch (error) {
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+};
+
+export const getKomentarKoordinat = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT maps.nama_pemilik AS nama_pemilik, 
+             history.history_id AS history_id,
+             koordinat.koordinat_id AS koordinat_id, 
+             TRIM(maps.nama_lahan) AS nama_lahan, 
+             history.komentar AS komentar, 
+             history.updated_at AS updated_at
+      FROM history 
+      JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
+      JOIN maps ON maps.map_id = koordinat.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      GROUP BY maps.nama_pemilik,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
+      ORDER BY history.history_id DESC
+    `);
+
+    const results = result.rows.map((row) => {
+      return {
+        history_id: row.history_id,
+        koordinat_id: row.koordinat_id,
+        name: row.nama_pemilik,
+        nama_lahan: row.nama_lahan,
+        komentar: row.komentar,
+        updated_at: row.updated_at,
+      };
+    });
+
+    return utilData(res, 200, results);
+  } catch (error) {
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+};
+
+export const getKomentarLahan = async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT maps.nama_pemilik AS nama_pemilik, 
+             verifikasi.map_id AS map_id, 
+             TRIM(maps.nama_lahan) AS nama_lahan, 
+             TRIM(verifikasi.komentar) AS komentar, 
+             verifikasi.updated_at AS updated_at
+      FROM maps 
+      JOIN verifikasi ON maps.map_id = verifikasi.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      GROUP BY maps.nama_pemilik,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.komentar, verifikasi.new_status,verifikasi.updated_at
+      ORDER BY verifikasi.map_id DESC
+    `);
+
+    const results = result.rows.map((row) => {
+      return {
+        map_id: row.map_id,
+        name: row.nama_pemilik,
+        nama_lahan: row.nama_lahan,
+        komentar: row.komentar,
         updated_at: row.updated_at,
       };
     });

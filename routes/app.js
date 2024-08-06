@@ -8,7 +8,9 @@ import {
   getMapById,
   getHistory,
   getValidator,
-  getStatus
+  getStatus,
+  getKomentarKoordinat,
+  getKomentarLahan
 } from "../controllers/map.js";
 import { validasiBerhasil, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekMapIDtoVerif } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
@@ -71,6 +73,8 @@ router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
 router.get('/cekMapIdtoVerif',  cekMapIDtoVerif);
+router.get('/getKomentarKoordinat', getKomentarKoordinat)
+router.get('/getKomentarLahan', getKomentarLahan)
 
 router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest',  pendingRequest);
