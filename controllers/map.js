@@ -87,6 +87,7 @@ export const getMapById = async (req, res) => {
         maps.progress, 
         maps.status, 
         koordinat.koordinat_id, 
+        koordinat.koordinat_verif,
         koordinat.koordinat, 
         translate(koordinat.image, CHR(255), '') AS image,
         maps.nama_pemilik, 
@@ -102,6 +103,7 @@ SELECT
     progress,
     status,
     ARRAY_AGG(koordinat_id) AS koordinat_id,
+    ARRAY_AGG(koordinat_verif) AS koordinat_verif,
     ARRAY_AGG(koordinat) AS coordinates,
     ARRAY_AGG(image) AS image,
     nama_pemilik,
@@ -144,6 +146,7 @@ ORDER BY nama_lahan;
       geometry: {
         coordinates: data.coordinates,
         koordinat_id: data.koordinat_id,
+        koordinat_verif: data.koordinat_verif,
         image: data.image
     }
     };
@@ -398,8 +401,11 @@ export const getHistory = async (req, res) => {
       SELECT maps.nama_pemilik AS nama_pemilik, 
              history.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
-             maps.status AS status, 
+             history.old_status AS old_status, 
+             history.status AS status, 
              history.komentar AS komentar,
+             history.old_koordinat_verif AS old_koordinat_verif,
+             history.new_koordinat_verif AS new_koordinat_verif,
              history.old_coordinate AS old_coordinate, 
              history.new_coordinate AS new_coordinate,
              history.updated_at AS updated_at
@@ -407,7 +413,7 @@ export const getHistory = async (req, res) => {
       JOIN maps ON maps.map_id = history.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE history.old_coordinate IS NOT NULL
-      GROUP BY maps.nama_pemilik, history.komentar, history.koordinat_id, maps.nama_lahan, maps.status, history.old_coordinate, history.new_coordinate, history.updated_at
+      GROUP BY maps.nama_pemilik, history.komentar, history.old_koordinat_verif, history.new_koordinat_verif, history.koordinat_id, maps.nama_lahan, history.status, history.old_status, history.old_coordinate, history.new_coordinate, history.updated_at
       ORDER BY history.koordinat_id DESC
     `);
 
@@ -418,8 +424,11 @@ export const getHistory = async (req, res) => {
         nama_lahan: row.nama_lahan,
         old_coordinate: row.old_coordinate,
         new_coordinate: row.new_coordinate,
-        komentar: row.komentar,
+        old_koordinat_verif: row.old_koordinat_verif,
+        new_koordinat_verif: row.new_koordinat_verif,
+        old_status: row.old_status,
         status: row.status,
+        komentar: row.komentar,
         updated_at: row.updated_at
       };
     });

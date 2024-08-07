@@ -64,6 +64,74 @@ export const cekValidasi = async (req, res) => {
   }
 };
 
+export const cekKoordinatIDtoVerif = async (req, res) => {
+  const client = await pool.connect();
+  const { jumlahLahanBersinggungan, perkiraanLahanBersinggungan, koordinatId } = req.body;
+  const lahanBelumDiisi = perkiraanLahanBersinggungan - jumlahLahanBersinggungan
+  try {
+    const fixedKoordinatResult = await client.query(
+      "SELECT koordinat, map_id, FROM koordinat WHERE koordinat_id = $1",
+      [koordinatId]
+    );
+    
+    if (fixedKoordinatResult.rows.length === 0) {
+      
+      return utilData(res, 404, { message: "Koordinat tidak ditemukan" });
+    }
+
+    const fixedKoordinat = {
+      longitude: fixedKoordinatResult.rows[0].koordinat[0],
+      latitude: fixedKoordinatResult.rows[0].koordinat[1],
+      mapId: fixedKoordinatResult.rows[0].map_id
+    };
+    // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
+    const findKoordinatResult = await client.query(
+      "SELECT map_id,koordinat, koordinat_id FROM koordinat WHERE map_id != $1",
+      [fixedKoordinat.mapId]
+    );
+    const findKoordinat = findKoordinatResult.rows.map(row => ({
+      map_id: row.map_id,
+      koordinat_id: row.koordinat_id,
+      longitude: row.koordinat[0],
+      latitude: row.koordinat[1]
+    }));
+    let distances = [];
+    // Hitung jarak dari koordinat yang diberikan ke setiap koordinat dari lahan lain
+    for (const koordinat of findKoordinat) {
+      const distance = calculateDistance(
+        fixedKoordinat.latitude,
+        fixedKoordinat.longitude,
+        koordinat.latitude,
+        koordinat.longitude
+      );
+      distances.push({ koordinat_id: koordinat.koordinat_id, distance });
+    }
+
+    // Urutkan jarak dan ambil sejumlah lahan terdekat yang diminta
+    distances.sort((a, b) => a.distance - b.distance);
+    const closestLands = distances.slice(0, jumlahLahanBersinggungan);
+
+    // Ambil map_id dari lahan terdekat
+    const closestKoordinatIds = closestLands.map(land => land.map_id);
+    for (let i = 0; i < lahanBelumDiisi; i++) {
+      closestKoordinatIds.push(null);
+    }
+    closestKoordinatIds.push(koordinatId);
+
+    // Update tabel koordinat dengan closestMapIds
+    await client.query(
+      "UPDATE koordinat SET koordinat_id_need_verif = $1 WHERE koordinat_id = $2",
+      [closestKoordinatIds, koordinatId]
+    );
+  
+    return utilData(res, 200, { closestKoordinatIds });
+  } catch (error) {
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+};
 export const cekMapIDtoVerif = async (req, res) => {
   const client = await pool.connect();
   const { jumlahLahanBersinggungan, perkiraanLahanBersinggungan, koordinatId } = req.body;
@@ -129,7 +197,6 @@ export const cekMapIDtoVerif = async (req, res) => {
     client.release();
   }
 };
-
 const checkArround = async (mapId) => {
   try {
     const client = await pool.connect();

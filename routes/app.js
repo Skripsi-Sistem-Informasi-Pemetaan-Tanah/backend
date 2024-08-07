@@ -12,7 +12,7 @@ import {
   getKomentarKoordinat,
   getKomentarLahan
 } from "../controllers/map.js";
-import { validasiBerhasil, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekMapIDtoVerif } from "../controllers/validasi.js";
+import { validasiBerhasil, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
 import {
   totalRequest,
@@ -72,7 +72,7 @@ router.get('/getHistory',  getHistory);
 router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
-router.get('/cekMapIdtoVerif',  cekMapIDtoVerif);
+router.get('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
 router.get('/getKomentarKoordinat', getKomentarKoordinat)
 router.get('/getKomentarLahan', getKomentarLahan)
 
