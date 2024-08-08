@@ -121,6 +121,16 @@ ORDER BY nama_lahan;
       // Handle case where map data is not found
       return utilData(res, 404, { message: "Map not found" });
     }
+    // if (
+    //   data.koordinat_verif.some(arr => arr === null) ||
+    //   data.coordinates.some(arr => arr === null) ||
+    //   data.image.some(arr => arr === null)
+    // ) {
+    //   return utilData(res, 400, { message: "Data contains null arrays" });
+    // }
+    // console.log(data.koordinat)
+    // console.log(data.koordinat_verif)
+    // console.log(data.image)
 
     // const coordinates = data.map(row => ({
     //     coordinates: row.coordinates,
@@ -155,7 +165,7 @@ ORDER BY nama_lahan;
   } catch (error) {
     // Handle errors
     console.error("Error:", error.message);
-    return utilData(res, 500, { message: "Internal Server Error" });
+    return utilData(res, 500, { message: error.message });
   } finally {
     client.release();
   }
