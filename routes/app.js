@@ -27,7 +27,7 @@ import { refreshToken } from "../controllers/refreshToken.js";
 //Mobile
 
 import {
-  checkConnectionDatabase, deleteUser, saveLahan, updateFotoPatokan, getAllLahan, getAllLahanbyUserId} from "../controllers/mobile.js"
+  checkConnectionDatabase, deleteUser, saveLahan, updateFotoPatokan, verifikasiKoordinat, getAllLahan, getAllLahanbyUserId} from "../controllers/mobile.js"
 
 const router = express.Router();
 
@@ -90,6 +90,7 @@ router.get('/checkConnectionDatabase', checkConnectionDatabase);
 router.delete('/deleteUser/:id', deleteUser);
 router.post('/saveLahan', saveLahan);
 router.post('/updateFotoPatokan', updateFotoPatokan);
+router.post('/verifikasiKoordinat', verifikasiKoordinat);
 router.get('/getAllLahan', getAllLahan);
 router.get('/getAllLahanbyUserId/:user_id', getAllLahanbyUserId);
 
