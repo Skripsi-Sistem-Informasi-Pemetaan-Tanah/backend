@@ -481,6 +481,7 @@ export const getStatus = async (req, res) => {
 
 export const getKomentarKoordinat = async (req, res) => {
   const client = await pool.connect();
+  const { mapId } = req.params;
   try {
     const result = await client.query(`
       SELECT maps.nama_pemilik AS nama_pemilik, 
@@ -493,9 +494,10 @@ export const getKomentarKoordinat = async (req, res) => {
       JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
+      WHERE history.map_id = $1
       GROUP BY maps.nama_pemilik,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
       ORDER BY history.history_id DESC
-    `);
+    `,[mapId]);
 
     const results = result.rows.map((row) => {
       return {

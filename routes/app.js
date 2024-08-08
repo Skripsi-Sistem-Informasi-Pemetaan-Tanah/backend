@@ -73,7 +73,7 @@ router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
 router.get('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
-router.get('/getKomentarKoordinat', getKomentarKoordinat)
+router.get('/getKomentarKoordinat/:mapId', getKomentarKoordinat)
 router.get('/getKomentarLahan', getKomentarLahan)
 
 router.get('/totalRequest', totalRequest);
