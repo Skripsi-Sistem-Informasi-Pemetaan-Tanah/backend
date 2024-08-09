@@ -80,6 +80,12 @@ export const getMapById = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.params;
   try {
+    const cekKoorVerif = await client.query(`
+      SELECT 
+        koordinat.koordinat_verif
+        FROM koordinat
+        WHERE map_id = $1 `,[mapId]);
+    if(cekKoorVerif>0){
     const result = await client.query(
         `WITH sorted_koordinat AS (
     SELECT 
@@ -110,8 +116,8 @@ SELECT
     updated_at AS date
 FROM sorted_koordinat
 GROUP BY nama_lahan, progress, status, nama_pemilik, updated_at
-ORDER BY nama_lahan;
-`,
+ORDER BY nama_lahan;`
+,
         [mapId]
     );
 
@@ -121,29 +127,7 @@ ORDER BY nama_lahan;
       // Handle case where map data is not found
       return utilData(res, 404, { message: "Map not found" });
     }
-    // if (
-    //   data.koordinat_verif.some(arr => arr === null) ||
-    //   data.coordinates.some(arr => arr === null) ||
-    //   data.image.some(arr => arr === null)
-    // ) {
-    //   return utilData(res, 400, { message: "Data contains null arrays" });
-    // }
-    // console.log(data.koordinat)
-    // console.log(data.koordinat_verif)
-    // console.log(data.image)
-
-    // const coordinates = data.map(row => ({
-    //     coordinates: row.coordinates,
-    //     koordinat_id: row.koordinat_id,
-    //     image: row.image
-    // }));
-
-    // const geom = {
-    //   geometry: {
-    //     type: "Polygon",
-    //     coordinates: [coordinates.find(coord => coord.geometry.koordinat_id === row.koordinat_id).geometry.coordinates]
-    //   }
-    // };
+    
     const features = {
       type: "Feature",
       properties: {
@@ -160,18 +144,77 @@ ORDER BY nama_lahan;
         image: data.image
     }
     };
+
     console.log("hit API ID");
     return utilData(res, 200, { features });
+  }else{
+    const result = await client.query(
+      `WITH sorted_koordinat AS (
+  SELECT 
+      maps.nama_lahan, 
+      maps.progress, 
+      maps.status, 
+      koordinat.koordinat_id, 
+      koordinat.koordinat, 
+      translate(koordinat.image, CHR(255), '') AS image,
+      maps.nama_pemilik, 
+      maps.updated_at
+  FROM koordinat 
+  JOIN maps ON maps.map_id = koordinat.map_id 
+  JOIN users ON maps.user_id = users.user_id 
+  WHERE koordinat.map_id = $1 
+  ORDER BY maps.nama_lahan, koordinat.koordinat_id
+)
+SELECT 
+  nama_lahan,
+  progress,
+  status,
+  ARRAY_AGG(koordinat_id) AS koordinat_id,
+  ARRAY_AGG(koordinat) AS coordinates,
+  ARRAY_AGG(image) AS image,
+  nama_pemilik,
+  updated_at AS date
+FROM sorted_koordinat
+GROUP BY nama_lahan, progress, status, nama_pemilik, updated_at
+ORDER BY nama_lahan;`
+,
+      [mapId]
+  );
+
+  const data = result.rows[0];
+
+  if (data.length === 0) {
+    // Handle case where map data is not found
+    return utilData(res, 404, { message: "Map not found" });
+  }
+  
+  const features = {
+    type: "Feature",
+    properties: {
+      nama_lahan: data.nama_lahan.trim(), 
+      status: data.status,
+      progress: data.progress,
+      nama_pemilik: data.nama_pemilik,
+      date: data.date
+    },
+    geometry: {
+      coordinates: data.coordinates,
+      koordinat_id: data.koordinat_id,
+      image: data.image
+  }
+  };
+
+  console.log("hit API ID");
+  return utilData(res, 200, { features });
+  }
   } catch (error) {
     // Handle errors
     console.error("Error:", error.message);
-    return utilData(res, 500, { message: error.message });
+    return utilData(res, 500, { message: "Internal Server Error" });
   } finally {
     client.release();
   }
 };
-
-
 // export const getMapById = async (req, res) => {
 //   const client = await pool.connect();
 //   const { mapId } = req.params;
@@ -489,25 +532,63 @@ export const getStatus = async (req, res) => {
   }
 };
 
+export const getKomentarLahan = async (req, res) => {
+  const client = await pool.connect();
+  const { mapId } = req.body;
+  try {
+    const result = await client.query(`
+      SELECT maps.nama_pemilik AS nama_pemilik, 
+             verifikasi.verifikasi_id AS verifikasi_id,
+             TRIM(maps.nama_lahan) AS nama_lahan, 
+             TRIM(verifikasi.komentar) AS komentar, 
+             verifikasi.updated_at AS updated_at
+      FROM verifikasi 
+      JOIN maps ON maps.map_id = verifikasi.map_id 
+      JOIN users ON maps.user_id = users.user_id 
+      WHERE verifikasi.map_id = $1
+      GROUP BY maps.nama_pemilik,maps.progress,users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.komentar,verifikasi.updated_at
+      ORDER BY verifikasi.verifikasi_id DESC
+    `,[mapId]);
+      console.log(result)
+    const results = result.rows.map((row) => {
+      return {
+        verifikasi_id: row.verifikasi_id,
+        name: row.nama_pemilik,
+        nama_lahan: row.nama_lahan,
+        komentar: row.komentar,
+        updated_at: row.updated_at,
+      };
+    });
+
+    return utilData(res, 200, results);
+  } catch (error) {
+    console.error("Error:", error.message);
+    return utilData(res, 500, { message: "Internal Server Error" });
+  } finally {
+    client.release();
+  }
+};
+
 export const getKomentarKoordinat = async (req, res) => {
   const client = await pool.connect();
-  const { mapId } = req.params;
+  const { koorId } = req.body;
+
   try {
     const result = await client.query(`
       SELECT maps.nama_pemilik AS nama_pemilik, 
              history.history_id AS history_id,
              koordinat.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
-             history.komentar AS komentar, 
+             TRIM(history.komentar) AS komentar, 
              history.updated_at AS updated_at
       FROM history 
       JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
-      WHERE history.map_id = $1
+      WHERE history.koordinat_id = $1
       GROUP BY maps.nama_pemilik,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
       ORDER BY history.history_id DESC
-    `,[mapId]);
+    `,[koorId]);
 
     const results = result.rows.map((row) => {
       return {
@@ -529,37 +610,26 @@ export const getKomentarKoordinat = async (req, res) => {
   }
 };
 
-export const getKomentarLahan = async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(`
-      SELECT maps.nama_pemilik AS nama_pemilik, 
-             verifikasi.map_id AS map_id, 
-             TRIM(maps.nama_lahan) AS nama_lahan, 
-             TRIM(verifikasi.komentar) AS komentar, 
-             verifikasi.updated_at AS updated_at
-      FROM maps 
-      JOIN verifikasi ON maps.map_id = verifikasi.map_id 
-      JOIN users ON maps.user_id = users.user_id 
-      GROUP BY maps.nama_pemilik,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.komentar, verifikasi.new_status,verifikasi.updated_at
-      ORDER BY verifikasi.map_id DESC
-    `);
+// if (
+    //   data.koordinat_verif.some(arr => arr === null) ||
+    //   data.coordinates.some(arr => arr === null) ||
+    //   data.image.some(arr => arr === null)
+    // ) {
+    //   return utilData(res, 400, { message: "Data contains null arrays" });
+    // }
+    // console.log(data.koordinat)
+    // console.log(data.koordinat_verif)
+    // console.log(data.image)
 
-    const results = result.rows.map((row) => {
-      return {
-        map_id: row.map_id,
-        name: row.nama_pemilik,
-        nama_lahan: row.nama_lahan,
-        komentar: row.komentar,
-        updated_at: row.updated_at,
-      };
-    });
+    // const coordinates = data.map(row => ({
+    //     coordinates: row.coordinates,
+    //     koordinat_id: row.koordinat_id,
+    //     image: row.image
+    // }));
 
-    return utilData(res, 200, results);
-  } catch (error) {
-    console.error("Error:", error.message);
-    return utilData(res, 500, { message: "Internal Server Error" });
-  } finally {
-    client.release();
-  }
-};
+    // const geom = {
+    //   geometry: {
+    //     type: "Polygon",
+    //     coordinates: [coordinates.find(coord => coord.geometry.koordinat_id === row.koordinat_id).geometry.coordinates]
+    //   }
+    // };

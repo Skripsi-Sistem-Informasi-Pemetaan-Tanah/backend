@@ -1,12 +1,34 @@
 import { utilMessage, utilData, utilError } from "../utils/message.js";
 import { pool } from "../config/db.js";
 
-export const validasiBerhasil = async (req, res) => {
+export const validasiOnProgress = async (req, res) => {
   const client = await pool.connect();
   const { mapId } = req.body;
   try {
     const editValidasi = await client.query(
-      "UPDATE maps SET status = 'Data Tervalidasi', komentar = 'Data Tervalidasi', progress = 100, updated_at = NOW() WHERE map_id = $1",
+      "UPDATE maps SET status = 1, komentar = 'Data masih dalam progress', updated_at = NOW() WHERE map_id = $1",
+      [mapId]
+    );
+
+    client.release();
+    if (editValidasi)
+      return utilMessage(
+        res,
+        200,
+        "Data dengan id " + mapId + " berhasil divalidasi"
+      );
+    return utilMessage(res, 403, "Data gagal divalidasi");
+  } catch (error) {
+    return utilError(res, error);
+  }
+};
+
+export const validasiKoordinatBerhasil = async (req, res) => {
+  const client = await pool.connect();
+  const { mapId } = req.body;
+  try {
+    const editValidasi = await client.query(
+      "UPDATE koordinat SET status = 'Data Tervalidasi', komentar = 'Data Tervalidasi', progress = 100, updated_at = NOW() WHERE map_id = $1",
       [mapId]
     );
 
@@ -25,11 +47,11 @@ export const validasiBerhasil = async (req, res) => {
 
 export const validasiDitolak = async (req, res) => {
   const client = await pool.connect();
-  const { mapId, komentar } = req.body;
+  const { mapId } = req.body;
   try {
     const editValidasi = await client.query(
-      "UPDATE maps SET status = 'Data ditolak', komentar = $1, updated_at = NOW() WHERE map_id = $2",
-      [komentar, mapId]
+      "UPDATE maps SET komentar = 'Lahan ditolak silahkan submit ulang', updated_at = NOW() WHERE map_id = $2",
+      [ mapId]
     );
     client.release();
     if (editValidasi)
@@ -370,4 +392,3 @@ const addKomentarKoordinats = async (mapId, Komentar) => {
     throw error;
   }
 };
-

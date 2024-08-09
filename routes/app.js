@@ -12,7 +12,7 @@ import {
   getKomentarKoordinat,
   getKomentarLahan
 } from "../controllers/map.js";
-import { validasiBerhasil, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif } from "../controllers/validasi.js";
+import { validasiOnProgress, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
 import {
   totalRequest,
@@ -44,7 +44,7 @@ router.get("/token", refreshToken);
 // router.delete('/deleteMap', verifyToken(2), deleteMap);
 // router.get('/getMapById/:mapId', verifyToken(2), getMapById);
 //
-// router.post('/validasiBerhasil', verifyToken(2), validasiBerhasil);
+// router.post('/validasiOnProgress', verifyToken(2), validasiOnProgress);
 // router.post('/validasiDitolak', verifyToken(2), validasiDitolak);
 // router.post('/cekValidasi/:mapId', verifyToken(2), cekValidasi);
 // router.get('/getAllMaps', verifyToken(2), getAllMaps);
@@ -64,7 +64,7 @@ router.post('/addMap', addMap);
 router.delete('/deleteMap/:mapId', deleteMap);
 router.get('/getMapById/:mapId',  getMapById);
 router.get('/getValidator/:mapId',  getValidator);
-router.post('/validasiBerhasil',  validasiBerhasil);
+router.post('/validasiOnProgress',  validasiOnProgress);
 router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
 router.get('/getAllMaps',  getAllMaps);
@@ -73,7 +73,7 @@ router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
 router.get('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
-router.get('/getKomentarKoordinat/:mapId', getKomentarKoordinat)
+router.get('/getKomentarKoordinat', getKomentarKoordinat)
 router.get('/getKomentarLahan', getKomentarLahan)
 
 router.get('/totalRequest', totalRequest);

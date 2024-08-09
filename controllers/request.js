@@ -13,7 +13,7 @@ export const taskTable = async (req, res) => {
       TRIM(maps.nama_lahan) as nama_lahan, 
       maps.progress as progress, 
       maps.status as status, 
-      maps.updated_at as updated_at,
+      to_char(maps.updated_at, 'HH24.MI/DD/MM/YYYY') as updated_at,
       to_char(maps.created_at, 'DD/MM/YYYY') as requested 
       FROM maps 
       JOIN users ON maps.user_id = users.user_id`,
