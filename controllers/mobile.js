@@ -226,9 +226,8 @@ export const verifikasiKoordinat = async (req, res) => {
     await pool.query(updateMapsQuery, mapsValues);
 
     for (const coord of lahan.koordinat) {
-      const koordinatValue = coord.status === 0
-        ? coord.koordinat.split(',').map(parseFloat)
-        : coord.koordinat_verif.split(',').map(parseFloat);
+      const koordinatValue = coord.status === 1
+        ? coord.koordinat_verif.split(',').map(parseFloat) : coord.koordinat.split(',').map(parseFloat);
 
       const updateKoordinatQuery = `
         UPDATE koordinat
@@ -244,6 +243,11 @@ export const verifikasiKoordinat = async (req, res) => {
         coord.koordinat_verif.split(',').map(parseFloat)
       ];
       await pool.query(updateKoordinatQuery, koordinatValues);
+
+            // Check if all statuses are 1
+            if (coord.status !== 1) {
+              allStatusOne = false;
+            }
 //       const updateKoordinatQuery = `
 //   INSERT INTO koordinat (status, updated_at, komentar, koordinat, map_id, koordinat_verif)
 //   VALUES ($1, $2, $3, $4, $5, $6)
@@ -265,7 +269,17 @@ export const verifikasiKoordinat = async (req, res) => {
 // await pool.query(updateKoordinatQuery, koordinatValues);
     }
 
-    return utilMessage(res, 200, 'Koordinat berhasil dicek user');
+    // If all statuses are 1, update the komentar in the maps table
+    if (allStatusOne) {
+      const updateKomentarQuery = `
+        UPDATE maps
+        SET komentar = 'silakan tunggu validasi titik koordinat dari pemilik lahan yang bersinggungan dengan lahan Anda', updated_at = $1
+        WHERE map_id = $2
+      `;
+      await pool.query(updateKomentarQuery, [currentTime, lahan.map_id]);
+    }
+
+    return utilMessage(res, 200, 'Koordinat berhasil divalidasi');
   } catch (error) {
     console.error('Error checking coordinates:', error);
     return utilError(res, error, 'Error checking coordinates');
