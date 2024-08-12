@@ -13,7 +13,7 @@ export const getAllMaps = async (req, res) => {
 
     const result = await client.query(`WITH sorted_koordinat AS (
     SELECT 
-        maps.nama_pemilik AS name, 
+        users.nama_lengkap AS name, 
         koordinat.map_id AS map_id, 
         TRIM(maps.nama_lahan) AS nama_lahan, 
         maps.progress AS progress,
@@ -100,7 +100,7 @@ export const getMapById = async (req, res) => {
         koordinat.koordinat_verif,
         koordinat.koordinat, 
         translate(koordinat.image, CHR(255), '') AS image,
-        maps.nama_pemilik, 
+        users.nama_lengkap as nama_pemilik, 
         maps.updated_at
     FROM koordinat 
     JOIN maps ON maps.map_id = koordinat.map_id 
@@ -161,7 +161,7 @@ ORDER BY nama_lahan;`
       koordinat.koordinat_id, 
       koordinat.koordinat, 
       translate(koordinat.image, CHR(255), '') AS image,
-      maps.nama_pemilik, 
+      users.nama_lengkap AS nama_pemilik, 
       maps.updated_at
   FROM koordinat 
   JOIN maps ON maps.map_id = koordinat.map_id 
@@ -307,7 +307,7 @@ export const getValidator = async (req, res) => {
             maps.status as status, 
             koordinat.koordinat_verif as coordinates, 
             koordinat.status AS status_coordinates,
-            maps.nama_pemilik as nama_pemilik, 
+            users.nama_lengkap as nama_pemilik, 
             maps.updated_at,
             koordinat.koordinat_id as koordinat_id
           FROM koordinat 
@@ -382,7 +382,7 @@ export const getDataMapID = async (req, res) => {
             maps.status as status, 
             koordinat.koordinat as coordinates, 
             koordinat.status AS status_coordinates,
-            maps.nama_pemilik as nama_pemilik, 
+            users.nama_lengkap as nama_pemilik, 
             maps.updated_at,
             koordinat.koordinat_id as koordinat_id
           FROM koordinat 
@@ -626,7 +626,7 @@ export const getHistory = async (req, res) => {
 
   try {
     const result = await client.query(`
-      SELECT maps.nama_pemilik AS nama_pemilik, 
+      SELECT users.nama_lengkap AS nama_pemilik, 
              history.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
              TRIM(history.old_status) AS old_status, 
@@ -641,7 +641,7 @@ export const getHistory = async (req, res) => {
       JOIN maps ON maps.map_id = history.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE history.old_coordinate IS NOT NULL
-      GROUP BY maps.nama_pemilik, history.komentar, history.old_koordinat_verif, history.new_koordinat_verif, history.koordinat_id, maps.nama_lahan, history.status, history.old_status, history.old_coordinate, history.new_coordinate, history.updated_at
+      GROUP BY users.nama_lengkap, history.komentar, history.old_koordinat_verif, history.new_koordinat_verif, history.koordinat_id, maps.nama_lahan, history.status, history.old_status, history.old_coordinate, history.new_coordinate, history.updated_at
       ORDER BY history.koordinat_id DESC
     `);
 
@@ -673,7 +673,7 @@ export const getStatus = async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(`
-      SELECT maps.nama_pemilik AS nama_pemilik, 
+      SELECT users.nama_lengkap AS nama_pemilik, 
              verifikasi.map_id AS map_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
              maps.progress AS progress, 
@@ -683,7 +683,7 @@ export const getStatus = async (req, res) => {
       FROM verifikasi 
       JOIN maps ON maps.map_id = verifikasi.map_id 
       JOIN users ON maps.user_id = users.user_id 
-      GROUP BY maps.nama_pemilik,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
+      GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
       ORDER BY verifikasi.map_id DESC
     `);
 
@@ -712,7 +712,7 @@ export const getKomentarLahan = async (req, res) => {
   const { mapId } = req.body;
   try {
     const result = await client.query(`
-      SELECT maps.nama_pemilik AS nama_pemilik, 
+      SELECT users.nama_lengkap AS nama_pemilik, 
              verifikasi.verifikasi_id AS verifikasi_id,
              TRIM(maps.nama_lahan) AS nama_lahan, 
              TRIM(verifikasi.komentar) AS komentar, 
@@ -721,7 +721,7 @@ export const getKomentarLahan = async (req, res) => {
       JOIN maps ON maps.map_id = verifikasi.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE verifikasi.map_id = $1
-      GROUP BY maps.nama_pemilik,maps.progress,users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.komentar,verifikasi.updated_at
+      GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.komentar,verifikasi.updated_at
       ORDER BY verifikasi.verifikasi_id DESC
     `,[mapId]);
       console.log(result)
@@ -750,7 +750,7 @@ export const getKomentarKoordinat = async (req, res) => {
 
   try {
     const result = await client.query(`
-      SELECT maps.nama_pemilik AS nama_pemilik, 
+      SELECT users.nama_lengkap AS nama_pemilik, 
              history.history_id AS history_id,
              koordinat.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
@@ -761,7 +761,7 @@ export const getKomentarKoordinat = async (req, res) => {
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE history.koordinat_id = $1
-      GROUP BY maps.nama_pemilik,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
+      GROUP BY users.nama_lengkap,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
       ORDER BY history.history_id DESC
     `,[koorId]);
 

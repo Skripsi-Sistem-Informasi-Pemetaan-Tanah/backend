@@ -8,7 +8,7 @@ export const taskTable = async (req, res) => {
   const client = await pool.connect();
   try {
     const result = await client.query(`
-      SELECT TRIM(maps.nama_pemilik) as nama_pemilik, 
+      SELECT TRIM(users.nama_lengkap) as nama_pemilik, 
       maps.map_id, 
       TRIM(maps.nama_lahan) as nama_lahan, 
       maps.progress as progress, 
