@@ -21,8 +21,8 @@ export const saveUser = async (req, res) => {
 
   try {
     const query = `
-      INSERT INTO users (user_id, nama_lengkap)
-      VALUES ($1, $2)
+      INSERT INTO users (user_id, nama_lengkap, created_at, updated_at)
+      VALUES ($1, $2, $3, $4)
       ON CONFLICT (user_id) DO UPDATE SET
         user_id = EXCLUDED.user_id,
         nama_lengkap = EXCLUDED.nama_lengkap
@@ -31,6 +31,8 @@ export const saveUser = async (req, res) => {
     const values = [
       user.user_id, 
       user.nama_lengkap, 
+      currentTime,
+      currentTime
     ];
 
     await pool.query(query, values);
@@ -89,9 +91,6 @@ export const saveLahan = async (req, res) => {
   const lahan = req.body;
 
   try {
-    if (!lahan.map_id) {
-      throw new Error('map_id is required');
-    }
 
     if (!lahan.map_id) {
       throw new Error('map_id is required');
@@ -99,41 +98,29 @@ export const saveLahan = async (req, res) => {
 
     const currentTime = new Date();
 
-    const userQuery = `
-      INSERT INTO users (user_id, nama_lengkap)
-      VALUES ($1, $2)
-      ON CONFLICT (user_id) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        nama_lengkap = EXCLUDED.nama_lengkap
-    `;
-    const userValues = [
-      lahan.user_id,
-      lahan.nama_pemilik
-    ];
-    await pool.query(userQuery, userValues);
+    // const userQuery = `
+    //   INSERT INTO users (user_id, nama_lengkap)
+    //   VALUES ($1, $2)
+    //   ON CONFLICT (user_id) DO UPDATE SET
+    //     user_id = EXCLUDED.user_id,
+    //     nama_lengkap = EXCLUDED.nama_lengkap
+    // `;
+    // const userValues = [
+    //   lahan.user_id,
+    //   lahan.nama_pemilik
+    // ];
+    // await pool.query(userQuery, userValues);
 
     const mapsQuery = `
-      INSERT INTO maps (map_id, user_id, nama_pemilik, nama_lahan, jenis_lahan, deskripsi_lahan, koordinat, status, progress, updated_at, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      ON CONFLICT (map_id) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        nama_pemilik = EXCLUDED.nama_pemilik,
-        nama_lahan = EXCLUDED.nama_lahan,
-        jenis_lahan = EXCLUDED.jenis_lahan,
-        deskripsi_lahan = EXCLUDED.deskripsi_lahan,
-        koordinat = EXCLUDED.koordinat,
-        status = EXCLUDED.status,
-        progress = EXCLUDED.progress,
-        updated_at = EXCLUDED.updated_at
+INSERT INTO maps (map_id, user_id, nama_lahan, jenis_lahan, deskripsi_lahan, status, progress, updated_at, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `;
     const mapsValues = [
       lahan.map_id,
       lahan.user_id,
-      lahan.nama_pemilik,
       lahan.nama_lahan,
       lahan.jenis_lahan,
       lahan.deskripsi_lahan,
-      JSON.stringify(lahan.koordinat),
       0,
       0,
       currentTime,
@@ -145,9 +132,6 @@ export const saveLahan = async (req, res) => {
       const koordinatQuery = `
         INSERT INTO koordinat (map_id, koordinat, image, created_at, updated_at)
         VALUES ($1, $2, $3, $4, $5)
-        ON CONFLICT (map_id, koordinat) DO UPDATE SET
-          image = EXCLUDED.image,
-          updated_at = EXCLUDED.updated_at
       `;
       const koordinatValues = [
         lahan.map_id,
@@ -188,11 +172,12 @@ export const updateFotoPatokan = async (req, res) => {
     for (const coord of lahan.koordinat) {
       const updateKoordinatQuery = `
         UPDATE koordinat
-        SET image = $1, updated_at = $2
-        WHERE map_id = $3 AND koordinat = $4
+        SET image = $1, komentar_mobile = $2, updated_at = $3
+        WHERE map_id = $4 AND koordinat = $5
       `;
       const koordinatValues = [
         coord.image,
+        coord.komentar_mobile,
         currentTime,
         lahan.map_id,
         coord.koordinat.split(',').map(parseFloat)
@@ -231,13 +216,13 @@ export const verifikasiKoordinat = async (req, res) => {
 
       const updateKoordinatQuery = `
         UPDATE koordinat
-        SET status = $1, updated_at = $2, komentar = $3, koordinat = $4
+        SET status = $1, updated_at = $2, komentar_mobile = $3, koordinat = $4
         WHERE map_id = $5 AND koordinat_verif = $6
       `;
       const koordinatValues = [
         coord.status,
         currentTime,
-        coord.komentar,
+        coord.komentar_mobile,
         koordinatValue,
         lahan.map_id,
         coord.koordinat_verif.split(',').map(parseFloat)
@@ -248,25 +233,6 @@ export const verifikasiKoordinat = async (req, res) => {
             if (coord.status !== 1) {
               allStatusOne = false;
             }
-//       const updateKoordinatQuery = `
-//   INSERT INTO koordinat (status, updated_at, komentar, koordinat, map_id, koordinat_verif)
-//   VALUES ($1, $2, $3, $4, $5, $6)
-//   ON CONFLICT (map_id, koordinat_verif)
-//   DO UPDATE SET 
-//     status = EXCLUDED.status, 
-//     updated_at = EXCLUDED.updated_at, 
-//     komentar = EXCLUDED.komentar, 
-//     koordinat = EXCLUDED.koordinat
-// `;
-// const koordinatValues = [
-//   coord.status,
-//   currentTime,
-//   coord.komentar,
-//   koordinatValue,
-//   lahan.map_id,
-//   coord.koordinat_verif.split(',').map(parseFloat)
-// ];
-// await pool.query(updateKoordinatQuery, koordinatValues);
     }
 
     // If all statuses are 1, update the komentar in the maps table
@@ -277,6 +243,34 @@ export const verifikasiKoordinat = async (req, res) => {
         WHERE map_id = $2
       `;
       await pool.query(updateKomentarQuery, [currentTime, lahan.map_id]);
+    }
+
+    // New: Count Percent of Agree logic after updating maps and koordinat
+    const dataKoor = await pool.query("SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
+      [lahan.map_id]);
+    let totalAgree = 0;
+    for (const dataKoord of dataKoor.rows) {
+      const dataArray = dataKoord.koordinat_id_need_verif || [];
+      const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
+      let agreeArray = [];
+
+      for (const koordinatId of filteredArray) {
+        const dataKoorID = await pool.query("SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1", 
+          [koordinatId]);
+        agreeArray.push(dataKoorID.rows[0].status);
+      }
+
+      const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+      const percentOfAgree = sum / agreeArray.length * 100;
+
+      if (percentOfAgree === 100) {
+        totalAgree++;
+      }
+    }
+
+    // Update the map status if all agrees are 100%
+    if (totalAgree === dataKoor.rows.length) {
+      await pool.query("UPDATE maps SET status = 2 WHERE map_id = $1", [lahan.map_id]);
     }
 
     return utilMessage(res, 200, 'Koordinat berhasil divalidasi');
@@ -413,6 +407,46 @@ export const getAllLahan = async (req, res) => {
   }
 };
 
+// export const countPercentOfAgree = async (req,res) => {
+//   try {
+//     const client = await pool.connect();
+//     const {mapId} = req.body;
+//     // Query untuk mengupdate komentar pada tabel maps
+//     const dataKoor = await client.query("SELECT koordinat.status,koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
+//       [mapId]);
+//     let totalAgree = []
+//     for(const dataKoord of dataKoor.rows){
+//       // Filter out null or undefined elements
+//       const dataArray = dataKoord.koordinat_id_need_verif
+//       const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
+//       let agreeArray = []
+//       for(const koordinatId of filteredArray){
+//         const dataKoorID = await client.query("SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1", 
+//           [koordinatId]);
+//       agreeArray.push(dataKoorID.rows[0].status)
+//       }
+//       // Menghitung jumlah semua elemen di dalam array
+//       const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+
+//       // Membagi jumlah elemen dengan panjang array
+//       const percentOfAgree = sum / agreeArray.length *100;
+//       if(percentOfAgree == 100){
+//         totalAgree++
+//       }
+//     }
+//     if (totalAgree == dataKoor.rows.length){
+//       await client.query("UPDATE maps SET status=2 WHERE map_id = $1", 
+//           [mapId]);
+//     }
+    
+//     client.release();
+//     return utilMessage(res, 200, "Status Lahan berhasil diperbarui");
+//   } catch (error) {
+//     // Tangani kesalahan jika terjadi saat menjalankan query
+//     console.error("Error while updating comment:", error);
+//     throw error;
+//   }
+// };
 
 
 // export const getAllLahan = async (req, res) => {
