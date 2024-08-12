@@ -88,19 +88,20 @@ export const cekValidasi = async (req, res) => {
 
 export const cekKoordinatIDtoVerif = async (req, res) => {
   const client = await pool.connect();
-  const { jumlahLahanBersinggungan, perkiraanLahanBersinggungan, koordinatId } = req.body;
+  const { jumlahLahanBersinggungan, perkiraanLahanBersinggungan, koordinatId, koordinatVerif } = req.body;
   const lahanBelumDiisi = perkiraanLahanBersinggungan - jumlahLahanBersinggungan
+  //1. tambahkan koordinat_verif dari koordinat tsb kemudian cari koordinat lain yg memliki koordinat_verif tsb 
+  //untuk diinputkan koordinatID ke koordinat_id_need_verif
+  //2. buat sistem di mobile ketika status lahan menjadi 1 maka akan mentrigger fungsi untuk mengubah status lahan ketika 
+  //percent of agree semua koordinat di lahan tsb 1
   try {
     const fixedKoordinatResult = await client.query(
-      "SELECT koordinat, map_id, FROM koordinat WHERE koordinat_id = $1",
+      "SELECT koordinat, map_id FROM koordinat WHERE koordinat_id = $1",
       [koordinatId]
     );
-    
-    if (fixedKoordinatResult.rows.length === 0) {
-      
+    if (fixedKoordinatResult.rows.length === 0) {  
       return utilData(res, 404, { message: "Koordinat tidak ditemukan" });
     }
-
     const fixedKoordinat = {
       longitude: fixedKoordinatResult.rows[0].koordinat[0],
       latitude: fixedKoordinatResult.rows[0].koordinat[1],
@@ -132,20 +133,76 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
     // Urutkan jarak dan ambil sejumlah lahan terdekat yang diminta
     distances.sort((a, b) => a.distance - b.distance);
     const closestLands = distances.slice(0, jumlahLahanBersinggungan);
+  
+    const closestKoordinatIds = [];
 
-    // Ambil map_id dari lahan terdekat
-    const closestKoordinatIds = closestLands.map(land => land.map_id);
+    closestKoordinatIds.push(koordinatId);
+    
+    closestLands.forEach(land => {
+      closestKoordinatIds.push(land.koordinat_id);
+    });
+    
+    // Tambahkan null sebanyak lahanBelumDiisi
     for (let i = 0; i < lahanBelumDiisi; i++) {
       closestKoordinatIds.push(null);
     }
-    closestKoordinatIds.push(koordinatId);
 
     // Update tabel koordinat dengan closestMapIds
     await client.query(
       "UPDATE koordinat SET koordinat_id_need_verif = $1 WHERE koordinat_id = $2",
       [closestKoordinatIds, koordinatId]
     );
-  
+        // Memisahkan latitude dan longitude dari string koor
+    const [latitude, longitude] = koordinatVerif.split(',');
+    
+    // Membuat format koordinat yang diinginkan {latitude,longitude}
+    const formattedKoor = `{${latitude},${longitude}}`;
+    // const findKoordinatWithaSameVerif = await client.query(
+    //   "SELECT koordinat_id_need_verif FROM koordinat WHERE koordinat_verif = $1",
+    //   [formattedKoor]
+    // );
+    const findKoordinatWithaSameVerif = await client.query(
+      "SELECT koordinat_id_need_verif, koordinat_id FROM koordinat WHERE koordinat_verif = $1 and koordinat_id != $2",
+      [formattedKoor, koordinatId]
+    );
+    
+    console.log(findKoordinatWithaSameVerif.rows);
+    
+    if (findKoordinatWithaSameVerif.rows.length > 0) {
+      for (const koordinatidneedverif of findKoordinatWithaSameVerif.rows) {
+        let koordinatIdFound = false;
+        console.log('koordinatidneedverif',koordinatidneedverif)
+        console.log('koordinatidneedverif.koordinat_id_need_verif',koordinatidneedverif.koordinat_id_need_verif)
+        // Cek apakah koordinatId sudah ada di array
+        for (const datakoorid of koordinatidneedverif.koordinat_id_need_verif) {
+          if (datakoorid === koordinatId) {
+            koordinatIdFound = true;
+            break;
+          }
+        }
+    
+        if (koordinatIdFound) {
+          continue; // Lanjutkan ke koordinatidneedverif berikutnya jika koordinatId sudah ada
+        }
+    
+        // Cari indeks pertama yang nilainya null
+        const index = koordinatidneedverif.koordinat_id_need_verif.indexOf(null);
+        if (index !== -1) {
+          // Ganti nilai null pada indeks tersebut dengan koordinatId
+          koordinatidneedverif.koordinat_id_need_verif[index] = koordinatId.toString();
+    
+          const cek = await client.query(
+            "UPDATE koordinat SET koordinat_id_need_verif = $1 WHERE koordinat_id = $2",
+            [koordinatidneedverif.koordinat_id_need_verif, koordinatidneedverif.koordinat_id]
+          );
+    
+          if (cek) {
+            console.log(koordinatidneedverif.koordinat_id_need_verif);
+            return utilData(res, 200, { message: "Koordinat berhasil" });
+          }
+        }
+      }
+    }
     return utilData(res, 200, { closestKoordinatIds });
   } catch (error) {
     console.error("Error:", error.message);
@@ -354,7 +411,46 @@ const addKomentars = async (mapId, Komentar) => {
     throw error;
   }
 };
+export const countPercentOfAgree = async (req,res) => {
+  try {
+    const client = await pool.connect();
+    const {mapId} = req.body;
+    // Query untuk mengupdate komentar pada tabel maps
+    const dataKoor = await client.query("SELECT koordinat.status,koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
+      [mapId]);
+    let totalAgree = []
+    for(const dataKoord of dataKoor.rows){
+      // Filter out null or undefined elements
+      const dataArray = dataKoord.koordinat_id_need_verif
+      const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
+      let agreeArray = []
+      for(const koordinatId of filteredArray){
+        const dataKoorID = await client.query("SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1", 
+          [koordinatId]);
+      agreeArray.push(dataKoorID.rows[0].status)
+      }
+      // Menghitung jumlah semua elemen di dalam array
+      const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
 
+      // Membagi jumlah elemen dengan panjang array
+      const percentOfAgree = sum / agreeArray.length *100;
+      if(percentOfAgree == 100){
+        totalAgree++
+      }
+    }
+    if (totalAgree == dataKoor.rows.length){
+      await client.query("UPDATE maps SET status=2 WHERE map_id = $1", 
+          [mapId]);
+    }
+    
+    client.release();
+    return utilMessage(res, 200, "Status Lahan berhasil diperbarui");
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    console.error("Error while updating comment:", error);
+    throw error;
+  }
+};
 export const addKomentarKoordinat = async (req,res) => {
   try {
     const client = await pool.connect();
