@@ -50,7 +50,7 @@ export const validasiDitolak = async (req, res) => {
   const { mapId } = req.body;
   try {
     const editValidasi = await client.query(
-      "UPDATE maps SET komentar = 'Lahan ditolak silahkan submit ulang', updated_at = NOW() WHERE map_id = $1",
+      "UPDATE maps SET komentar = 'Lahan ditolak silahkan submit ulang', status = 3, updated_at = NOW() WHERE map_id = $1",
       [ mapId]
     );
     client.release();
