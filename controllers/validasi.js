@@ -50,7 +50,7 @@ export const validasiDitolak = async (req, res) => {
   const { mapId } = req.body;
   try {
     const editValidasi = await client.query(
-      "UPDATE maps SET komentar = 'Lahan ditolak silahkan submit ulang', updated_at = NOW() WHERE map_id = $2",
+      "UPDATE maps SET komentar = 'Lahan ditolak silahkan submit ulang', updated_at = NOW() WHERE map_id = $1",
       [ mapId]
     );
     client.release();
@@ -78,8 +78,7 @@ export const cekValidasi = async (req, res) => {
     } else {
       await addKomentars(mapId, "Ada koordinat yang belum diklaim oleh orang lain");
     }
-
-    res.status(200).send("Validation completed successfully.");
+    return utilMessage(res, 200, "Validation completed successfully.");
   } catch (error) {
     console.error("Error during validation:", error);
     res.status(500).send("Internal server error.");
