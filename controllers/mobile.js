@@ -204,10 +204,10 @@ export const verifikasiKoordinat = async (req, res) => {
 
     const updateMapsQuery = `
       UPDATE maps
-      SET koordinat = $1, updated_at = $2
-      WHERE map_id = $3
+      SET updated_at = $1
+      WHERE map_id = $2
     `;
-    const mapsValues = [JSON.stringify(lahan.koordinat), currentTime, lahan.map_id];
+    const mapsValues = [currentTime, lahan.map_id];
     await pool.query(updateMapsQuery, mapsValues);
 
     for (const coord of lahan.koordinat) {
