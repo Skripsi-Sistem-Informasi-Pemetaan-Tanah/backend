@@ -284,7 +284,7 @@ export const getAllLahanbyUserId = async (req, res) => {
   const userId = req.params.user_id;
 
   try {
-    const mapsQuery = 'SELECT user_id, map_id, nama_pemilik, nama_lahan, jenis_lahan, deskripsi_lahan, updated_at, koordinat FROM maps WHERE user_id = $1';
+    const mapsQuery = 'SELECT user_id, map_id, nama_lahan, jenis_lahan, deskripsi_lahan, updated_at FROM maps WHERE user_id = $1';
     const mapsResult = await pool.query(mapsQuery, [userId]);
 
     const patokanQuery = 'SELECT koordinat_id, map_id, koordinat, image, status, koordinat_verif, komentar, koordinat_id_need_verif FROM koordinat';
@@ -347,7 +347,7 @@ export const getAllLahanbyUserId = async (req, res) => {
 
 export const getAllLahan = async (req, res) => {
   try {
-    const mapsQuery = 'SELECT user_id, map_id, nama_pemilik, nama_lahan, jenis_lahan, deskripsi_lahan, updated_at FROM maps';
+    const mapsQuery = 'SELECT user_id, map_id, nama_lahan, jenis_lahan, deskripsi_lahan, updated_at FROM maps';
     const mapsResult = await pool.query(mapsQuery);
 
     const patokanQuery = 'SELECT koordinat_id, map_id, koordinat, image, status, koordinat_verif, komentar, koordinat_id_need_verif FROM koordinat';
