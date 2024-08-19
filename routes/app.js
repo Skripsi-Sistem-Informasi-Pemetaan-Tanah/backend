@@ -74,7 +74,7 @@ router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.get('/getDataMapID',  getDataMapID);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
-router.get('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
+router.post('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
 router.get('/getKomentarKoordinat', getKomentarKoordinat)
 router.get('/getKomentarLahan', getKomentarLahan)
 router.get('/countPercentOfAgree', countPercentOfAgree);
