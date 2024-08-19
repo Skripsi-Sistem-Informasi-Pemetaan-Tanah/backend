@@ -163,10 +163,10 @@ export const updateFotoPatokan = async (req, res) => {
 
     const updateMapsQuery = `
       UPDATE maps
-      SET koordinat = $1, updated_at = $2
-      WHERE map_id = $3
+      SET updated_at = $1
+      WHERE map_id = $2
     `;
-    const mapsValues = [JSON.stringify(lahan.koordinat), currentTime, lahan.map_id];
+    const mapsValues = [currentTime, lahan.map_id];
     await pool.query(updateMapsQuery, mapsValues);
 
     for (const coord of lahan.koordinat) {
@@ -204,11 +204,13 @@ export const verifikasiKoordinat = async (req, res) => {
 
     const updateMapsQuery = `
       UPDATE maps
-      SET koordinat = $1, updated_at = $2
-      WHERE map_id = $3
+      SET updated_at = $1
+      WHERE map_id = $2
     `;
-    const mapsValues = [JSON.stringify(lahan.koordinat), currentTime, lahan.map_id];
+    const mapsValues = [currentTime, lahan.map_id];
     await pool.query(updateMapsQuery, mapsValues);
+
+    let allStatusOne = true;
 
     for (const coord of lahan.koordinat) {
       const koordinatValue = coord.status === 1
@@ -312,6 +314,7 @@ export const getAllLahanbyUserId = async (req, res) => {
           ).length;
           const percentAgree = totalNeedVerif ? (agreedCount / totalNeedVerif) * 100 : 0;
           return {
+            koordinat_id: p.koordinat_id,
             map_id: p.map_id,
             koordinat: p.koordinat ? `${p.koordinat[0] ?? 0}, ${p.koordinat[1] ?? 0}` : '0, 0',
             image: p.image,
@@ -320,8 +323,9 @@ export const getAllLahanbyUserId = async (req, res) => {
             komentar: p.komentar,
             percent_agree: percentAgree
           };
-        });
-
+        })
+        .sort((a, b) => a.koordinat_id - b.koordinat_id);
+        
       const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
       
       return {
@@ -375,6 +379,7 @@ export const getAllLahan = async (req, res) => {
           ).length;
           const percentAgree = totalNeedVerif ? (agreedCount / totalNeedVerif) * 100 : 0;
           return {
+            koordinat_id: p.koordinat_id,
             map_id: p.map_id,
             koordinat: p.koordinat ? `${p.koordinat[0] ?? 0}, ${p.koordinat[1] ?? 0}` : '0, 0',
             image: p.image,
@@ -383,7 +388,8 @@ export const getAllLahan = async (req, res) => {
             komentar: p.komentar,
             percent_agree: percentAgree
           };
-        });
+        })
+        .sort((a, b) => a.koordinat_id - b.koordinat_id);
 
       const verifikasiData = verifikasiResult.rows.filter(v => v.map_id === map.map_id);
 
