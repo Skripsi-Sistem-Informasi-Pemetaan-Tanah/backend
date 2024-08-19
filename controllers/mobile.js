@@ -237,16 +237,6 @@ export const verifikasiKoordinat = async (req, res) => {
             }
     }
 
-    // If all statuses are 1, update the komentar in the maps table
-    if (allStatusOne) {
-      const updateKomentarQuery = `
-        UPDATE maps
-        SET komentar = 'silakan tunggu validasi titik koordinat dari pemilik lahan yang bersinggungan dengan lahan Anda', updated_at = $1
-        WHERE map_id = $2
-      `;
-      await pool.query(updateKomentarQuery, [currentTime, lahan.map_id]);
-    }
-
     // New: Count Percent of Agree logic after updating maps and koordinat
     const dataKoor = await pool.query("SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
       [lahan.map_id]);
@@ -273,6 +263,16 @@ export const verifikasiKoordinat = async (req, res) => {
     // Update the map status if all agrees are 100%
     if (totalAgree === dataKoor.rows.length) {
       await pool.query("UPDATE maps SET status = 2 WHERE map_id = $1", [lahan.map_id]);
+    }
+
+    // If all statuses are 1, update the komentar in the maps table
+    if (allStatusOne) {
+      const updateKomentarQuery = `
+        UPDATE maps
+        SET komentar = 'silakan tunggu validasi titik koordinat dari pemilik lahan yang bersinggungan dengan lahan Anda', updated_at = $1
+        WHERE map_id = $2
+      `;
+      await pool.query(updateKomentarQuery, [currentTime, lahan.map_id]);
     }
 
     return utilMessage(res, 200, 'Koordinat berhasil divalidasi');
