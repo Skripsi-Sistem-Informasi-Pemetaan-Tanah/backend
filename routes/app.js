@@ -13,7 +13,7 @@ import {
   getKomentarLahan,
   getDataMapID
 } from "../controllers/map.js";
-import { validasiOnProgress, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif,countPercentOfAgree } from "../controllers/validasi.js";
+import { validasiOnProgress, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif,updateStatusLahan, cekSameKoorVerif } from "../controllers/validasi.js";
 import { runValidation, validationRegister } from "../utils/validation.js";
 import {
   totalRequest,
@@ -74,16 +74,16 @@ router.get('/getStatus',  getStatus);
 router.post('/addKomentar',  addKomentar);
 router.get('/getDataMapID',  getDataMapID);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
+router.post('/cekSameKoorVerif',  cekSameKoorVerif);
 router.post('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
 router.get('/getKomentarKoordinat', getKomentarKoordinat)
 router.get('/getKomentarLahan', getKomentarLahan)
-router.get('/countPercentOfAgree', countPercentOfAgree);
+router.post('/updateStatusLahan', updateStatusLahan);
 router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest',  pendingRequest);
 router.get('/requestPerDay', requestPerDay);
 router.get('/verifiedRequest', verifiedRequest);
 router.get('/monthlyRequestChange', monthlyRequestChange);
-
 router.get("/taskTable", taskTable);
 //Mobile
 router.get('/checkConnectionDatabase', checkConnectionDatabase);

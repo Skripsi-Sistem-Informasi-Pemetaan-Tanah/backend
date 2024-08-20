@@ -171,7 +171,6 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
       for (const koordinatidneedverif of findKoordinatWithaSameVerif.rows) {
         let koordinatIdFound = false;
         console.log('koordinatidneedverif',koordinatidneedverif)
-        console.log('koordinatidneedverif.koordinat_id_need_verif',koordinatidneedverif.koordinat_id_need_verif)
         // Cek apakah koordinatId sudah ada di array
         for (const datakoorid of koordinatidneedverif.koordinat_id_need_verif) {
           if (datakoorid === koordinatId) {
@@ -190,19 +189,23 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
           // Ganti nilai null pada indeks tersebut dengan koordinatId
           koordinatidneedverif.koordinat_id_need_verif[index] = koordinatId.toString();
     
-          const cek = await client.query(
+        await client.query(
             "UPDATE koordinat SET koordinat_id_need_verif = $1 WHERE koordinat_id = $2",
             [koordinatidneedverif.koordinat_id_need_verif, koordinatidneedverif.koordinat_id]
           );
-    
-          if (cek) {
-            console.log(koordinatidneedverif.koordinat_id_need_verif);
-            return utilData(res, 200, { message: "Koordinat berhasil" });
-          }
+        // Get map id untuk mengubah status lahan menjadi 1
+        const getMapId = await client.query(
+          "SELECT map_id FROM koordinat WHERE koordinat_id = $1",
+          [koordinatidneedverif.koordinat_id]
+        );
+        await client.query(
+          "UPDATE maps SET status = 1 WHERE map_id = $1",
+          [getMapId.rows[0].map_id]
+        );
         }
       }
     }
-    return utilData(res, 200, { closestKoordinatIds });
+    return utilData(res, 200, { message: "Koordinat berhasil diupdate" });
   } catch (error) {
     console.error("Error:", error.message);
     return utilData(res, 500, { message: "Internal Server Error" });
@@ -412,6 +415,8 @@ const addKomentars = async (mapId, Komentar) => {
 };
 export const countPercentOfAgree = async (req,res) => {
   try {
+    //update semua status lahan menjadi 2 dengan koordinat_verif yang sama 
+    //dengan menghitung percentage of agree
     const client = await pool.connect();
     const {mapId} = req.body;
     // Query untuk mengupdate komentar pada tabel maps
@@ -450,6 +455,78 @@ export const countPercentOfAgree = async (req,res) => {
     throw error;
   }
 };
+export const updateStatusLahan = async (req,res) => {
+  try {
+    //update semua status lahan menjadi 2 dengan koordinat_verif yang sama 
+    //dengan menghitung percentage of agree
+    const client = await pool.connect();
+    const {koor} = req.body;
+    // Query untuk mengupdate komentar pada tabel maps
+    const dataKoor = await client.query("SELECT map_id, koordinat_id FROM koordinat WHERE koordinat_verif = $1", 
+      [koor]);
+    for(const dataKoord of dataKoor.rows){
+      // Filter out null or undefined elements
+      const dataMapId = dataKoord.map_id
+      countPercentOfAgreeFunction(dataMapId)
+    }
+    
+    client.release();
+    return utilMessage(res, 200, "Status Lahan berhasil diperbarui");
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    console.error("Error while updating comment:", error);
+    throw error;
+  }
+};
+const countPercentOfAgreeFunction = async (mapId) => {
+  const client = await pool.connect();
+  try {
+    // Query untuk mengambil status dan koordinat_id_need_verif dari tabel koordinat berdasarkan mapId
+    const dataKoor = await client.query(
+      "SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
+      [mapId]
+    );
+
+    let totalAgree = 0;
+
+    for (const dataKoord of dataKoor.rows) {
+      const dataArray = dataKoord.koordinat_id_need_verif || [];
+      const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
+      
+      let agreeArray = [];
+
+      for (const koordinatId of filteredArray) {
+        const dataKoorID = await client.query(
+          "SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1", 
+          [koordinatId]
+        );
+        agreeArray.push(dataKoorID.rows[0].status);
+      }
+
+      // Menghitung persentase kesepakatan
+      const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+      const percentOfAgree = sum / agreeArray.length * 100;
+
+      if (percentOfAgree === 100) {
+        totalAgree++;
+      }
+    }
+
+    if (totalAgree === dataKoor.rows.length) {
+      await client.query("UPDATE maps SET status = 2 WHERE map_id = $1", [mapId]);
+    }
+
+    client.release();
+    return "Status Lahan berhasil diperbarui";
+
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    console.error("Error while updating status:", error);
+    client.release();
+    throw error;
+  }
+};
+
 export const addKomentarKoordinat = async (req,res) => {
   try {
     const client = await pool.connect();
@@ -487,3 +564,14 @@ const addKomentarKoordinats = async (mapId, Komentar) => {
     throw error;
   }
 };
+
+export const cekSameKoorVerif = async (req,res) => {
+  try{
+    const client = await pool.connect();
+    const {koor} = req.body
+
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    utilError(res, error)
+  }
+}
