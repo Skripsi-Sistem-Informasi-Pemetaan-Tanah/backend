@@ -709,7 +709,7 @@ export const getStatus = async (req, res) => {
 
 export const getKomentarLahan = async (req, res) => {
   const client = await pool.connect();
-  const { mapId } = req.body;
+  const { mapId } = req.params;
   try {
     const result = await client.query(`
       SELECT users.nama_lengkap AS nama_pemilik, 
@@ -746,7 +746,7 @@ export const getKomentarLahan = async (req, res) => {
 
 export const getKomentarKoordinat = async (req, res) => {
   const client = await pool.connect();
-  const { koorId } = req.body;
+  const { koorId } = req.params;
 
   try {
     const result = await client.query(`

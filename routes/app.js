@@ -76,8 +76,8 @@ router.get('/getDataMapID',  getDataMapID);
 router.post('/addKomentarKoordinat',  addKomentarKoordinat);
 router.post('/cekSameKoorVerif',  cekSameKoorVerif);
 router.post('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
-router.get('/getKomentarKoordinat', getKomentarKoordinat)
-router.get('/getKomentarLahan', getKomentarLahan)
+router.get('/getKomentarKoordinat/:koorId', getKomentarKoordinat)
+router.get('/getKomentarLahan/:mapId', getKomentarLahan)
 router.post('/updateStatusLahan', updateStatusLahan);
 router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest',  pendingRequest);
