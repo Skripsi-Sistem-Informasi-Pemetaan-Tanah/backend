@@ -755,7 +755,7 @@ export const getKomentarKoordinat = async (req, res) => {
              koordinat.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
              TRIM(history.komentar) AS komentar, 
-             TRIM(history.komentar_mobile) AS komentar_mobile
+             TRIM(history.komentar_mobile) AS komentar_mobile,
              history.updated_at AS updated_at
       FROM history 
       JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
