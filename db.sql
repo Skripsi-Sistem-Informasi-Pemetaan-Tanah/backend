@@ -175,7 +175,7 @@ CREATE OR REPLACE FUNCTION log_koordinat_changes()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Insert the old and new coordinates into history table
-    INSERT INTO history (map_id, koordinat_id, old_coordinate, new_coordinate, old_status, status, old_koordinat_verif, new_koordinat_verif,koordinat_mobile, komentar, updated_at)
+    INSERT INTO history (map_id, koordinat_id, old_coordinate, new_coordinate, old_status, status, old_koordinat_verif, new_koordinat_verif,komentar_mobile, komentar, updated_at)
     VALUES (
         NEW.map_id,
         NEW.koordinat_id,
@@ -185,7 +185,7 @@ BEGIN
         NEW.status,
         CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE OLD.koordinat_verif::TEXT END,
         NEW.koordinat_verif,
-        NEW.koordinat_mobile,
+        NEW.komentar_mobile,
         NEW.komentar,
         NEW.updated_at
     );

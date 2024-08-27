@@ -755,13 +755,14 @@ export const getKomentarKoordinat = async (req, res) => {
              koordinat.koordinat_id AS koordinat_id, 
              TRIM(maps.nama_lahan) AS nama_lahan, 
              TRIM(history.komentar) AS komentar, 
+             TRIM(history.komentar_mobile) AS komentar_mobile
              history.updated_at AS updated_at
       FROM history 
       JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
       JOIN maps ON maps.map_id = koordinat.map_id 
       JOIN users ON maps.user_id = users.user_id 
       WHERE koordinat.map_id = $1
-      GROUP BY users.nama_lengkap,maps.progress,users.username, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
+      GROUP BY users.nama_lengkap,maps.progress,users.username, history.komentar_mobile, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
       ORDER BY history.history_id DESC
     `,[mapId]);
 
@@ -772,6 +773,7 @@ export const getKomentarKoordinat = async (req, res) => {
         name: row.nama_pemilik,
         nama_lahan: row.nama_lahan,
         komentar: row.komentar,
+        komentar_mobile: row.komentar_mobile,
         updated_at: row.updated_at,
       };
     });
