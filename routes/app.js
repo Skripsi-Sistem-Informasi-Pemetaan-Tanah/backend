@@ -1,34 +1,49 @@
 import express from "express";
-import { register, login, logout, getUser } from "../controllers/user.js";
+import {register, login, logout, getUser} from "../controllers/user.js";
 import {
-  editMap,
-  addMap,
-  deleteMap,
-  getAllMaps,
-  getMapById,
-  getHistory,
-  getValidator,
-  getStatus,
-  getKomentarKoordinat,
-  getKomentarLahan,
-  getDataMapID
+    editMap,
+    addMap,
+    deleteMap,
+    getAllMaps,
+    getMapById,
+    getHistory,
+    getHistoryById,
+    getValidator,
+    getStatus,
+    getStatusById,
+    getKomentarKoordinat,
+    getKomentarLahan,
+    getDataMapID
 } from "../controllers/map.js";
-import { validasiOnProgress, validasiDitolak, cekValidasi, addKomentar, addKomentarKoordinat, cekKoordinatIDtoVerif,updateStatusLahan, cekSameKoorVerif } from "../controllers/validasi.js";
-import { runValidation, validationRegister } from "../utils/validation.js";
 import {
-  totalRequest,
-  pendingRequest,
-  requestPerDay,
-  verifiedRequest,
-  monthlyRequestChange
+    validasiOnProgress,
+    validasiDitolak,
+    cekValidasi,
+    addKomentar,
+    addKomentarKoordinat,
+    cekKoordinatIDtoVerif,
+    updateStatusLahan,
+    cekSameKoorVerif
+} from "../controllers/validasi.js";
+import {runValidation, validationRegister} from "../utils/validation.js";
+import {
+    totalRequest, pendingRequest, requestPerDay, verifiedRequest, monthlyRequestChange
 } from "../controllers/dashboard.js";
-import { taskTable } from "../controllers/request.js";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { refreshToken } from "../controllers/refreshToken.js";
+import {taskTable} from "../controllers/request.js";
+import {verifyToken} from "../middleware/verifyToken.js";
+import {refreshToken} from "../controllers/refreshToken.js";
 //Mobile
 
 import {
-  checkConnectionDatabase, deleteUser, saveUser, saveLahan, updateFotoPatokan, verifikasiKoordinat, getAllLahan, getAllLahanbyUserId} from "../controllers/mobile.js"
+    checkConnectionDatabase,
+    deleteUser,
+    saveUser,
+    saveLahan,
+    updateFotoPatokan,
+    verifikasiKoordinat,
+    getAllLahan,
+    getAllLahanbyUserId
+} from "../controllers/mobile.js"
 
 const router = express.Router();
 
@@ -63,24 +78,26 @@ router.get("/token", refreshToken);
 router.post('/editMap', editMap);
 router.post('/addMap', addMap);
 router.delete('/deleteMap/:mapId', deleteMap);
-router.get('/getMapById/:mapId',  getMapById);
-router.get('/getValidator/',  getValidator);
-router.post('/validasiOnProgress',  validasiOnProgress);
+router.get('/getMapById/:mapId', getMapById);
+router.get('/getValidator/', getValidator);
+router.post('/validasiOnProgress', validasiOnProgress);
 router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
-router.get('/getAllMaps',  getAllMaps);
-router.get('/getHistory',  getHistory);
-router.get('/getStatus',  getStatus);
-router.post('/addKomentar',  addKomentar);
-router.get('/getDataMapID',  getDataMapID);
-router.post('/addKomentarKoordinat',  addKomentarKoordinat);
-router.post('/cekSameKoorVerif',  cekSameKoorVerif);
-router.post('/cekKoordinatIDtoVerif',  cekKoordinatIDtoVerif);
+router.get('/getAllMaps', getAllMaps);
+router.get('/getHistory', getHistory);
+router.get('/getHistoryById/:mapId', getHistoryById)
+router.get('/getStatus', getStatus);
+router.get('/getStatusById/:mapId', getStatusById);
+router.post('/addKomentar', addKomentar);
+router.get('/getDataMapID', getDataMapID);
+router.post('/addKomentarKoordinat', addKomentarKoordinat);
+router.post('/cekSameKoorVerif', cekSameKoorVerif);
+router.post('/cekKoordinatIDtoVerif', cekKoordinatIDtoVerif);
 router.get('/getKomentarKoordinat/:mapId', getKomentarKoordinat)
 router.get('/getKomentarLahan/:mapId', getKomentarLahan)
 router.post('/updateStatusLahan', updateStatusLahan);
 router.get('/totalRequest', totalRequest);
-router.get('/pendingRequest',  pendingRequest);
+router.get('/pendingRequest', pendingRequest);
 router.get('/requestPerDay', requestPerDay);
 router.get('/verifiedRequest', verifiedRequest);
 router.get('/monthlyRequestChange', monthlyRequestChange);
