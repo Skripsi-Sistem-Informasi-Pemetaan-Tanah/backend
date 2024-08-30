@@ -199,7 +199,7 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
           [koordinatidneedverif.koordinat_id]
         );
         await client.query(
-          "UPDATE maps SET status = 1 WHERE map_id = $1",
+          "UPDATE maps SET status = 1, komentar = 'Lahan perlu divalidasi kembali oleh pemilik lahan yang bersinggungan dengan lahan Anda. Silakan menunggu.'  WHERE map_id = $1",
           [getMapId.rows[0].map_id]
         );
         }

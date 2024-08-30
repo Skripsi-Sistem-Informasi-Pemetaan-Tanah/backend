@@ -72,6 +72,7 @@ ORDER BY name;
 export const getMapById = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
+
     try {
         const cekKoorVerif = await client.query(`
       SELECT 
@@ -118,8 +119,8 @@ export const getMapById = async (req, res) => {
         FROM sorted_koordinat
         GROUP BY nama_lahan, progress, status, nama_pemilik, updated_at
         ORDER BY nama_lahan;`, [mapId]);
-
             const data = result.rows[0];
+            console.log(result)
 
             if (data.length === 0) {
                 // Handle case where map data is not found
@@ -269,7 +270,6 @@ export const getValidator = async (req, res) => {
                 arrayOfKoorVerif.push(dataTest.koordinat_id)
             }
         }
-        console.log('ab', arrayOfKoorVerif)
         if (arrayOfKoorVerif.length > 0) {
             const testlagi = await client.query(`SELECT koordinat.koordinat_verif 
          FROM koordinat 
@@ -723,14 +723,12 @@ export const getStatus = async (req, res) => {
 
 export const getStatusById = async (req, res) => {
     const client = await pool.connect();
-    const { map_id } = req.params;
-
+    const { mapId } = req.params;
     try {
         const result = await client.query(`
             SELECT users.nama_lengkap AS nama_pemilik, 
                    verifikasi.map_id AS map_id, 
                    TRIM(maps.nama_lahan) AS nama_lahan, 
-                   maps.progress AS progress, 
                    verifikasi.old_status AS old_status, 
                    verifikasi.new_status AS new_status,
                    verifikasi.updated_at AS updated_at
@@ -738,12 +736,11 @@ export const getStatusById = async (req, res) => {
             JOIN maps ON maps.map_id = verifikasi.map_id 
             JOIN users ON maps.user_id = users.user_id 
             WHERE verifikasi.map_id = $1
+            GROUP BY users.nama_lengkap, verifikasi.map_id, maps.nama_lahan, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
             ORDER BY verifikasi.updated_at DESC
-        `, [map_id]);
-
+        `, [mapId]);
         // Directly return all rows to see what data is retrieved
         const results = result.rows.map((row) => {
-            console.log(row);  // Print each row to the console for debugging
             return {
                 map_id: row.map_id,
                 name: row.nama_pemilik,
