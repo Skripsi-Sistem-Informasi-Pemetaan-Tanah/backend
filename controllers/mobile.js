@@ -235,15 +235,17 @@ export const verifikasiKoordinat = async (req, res) => {
       ];
       await client.query(updateKoordinatQuery, koordinatValues);
 
+      // Update map status and komentar based on status 1 and percent of agree
+      await updateStatusLahan({ body: { koor: coord.koordinat_verif.split(',').map(parseFloat) } }, res);
+
+
       // Check if all statuses are 1
       if (coord.status !== 1) {
         allStatusOne = false;
       }
     }
 
-    // Update map status and komentar based on status 1 and percent of agree
-    await updateStatusLahan(lahan.map_id, client);
-
+    
     // If all statuses are 1, update komentar in maps
     if (allStatusOne) {
       const updateKomentarQuery = `
@@ -263,11 +265,35 @@ export const verifikasiKoordinat = async (req, res) => {
   }
 };
 
-export const updateStatusLahan = async (mapId, client) => {
+export const updateStatusLahan = async (req,res) => {
   try {
-    // Count percentage of agree logic after updating maps and koordinat
+    //update semua status lahan menjadi 2 dengan koordinat_verif yang sama 
+    //dengan menghitung percentage of agree
+    const client = await pool.connect();
+    const {koor} = req.body;
+    // Query untuk mengupdate komentar pada tabel maps
+    const dataKoor = await client.query("SELECT map_id, koordinat_id FROM koordinat WHERE koordinat_verif = $1", 
+      [koor]);
+    for(const dataKoord of dataKoor.rows){
+      // Filter out null or undefined elements
+      const dataMapId = dataKoord.map_id
+      countPercentOfAgreeFunction(dataMapId)
+    }
+    
+    client.release();
+    return "Status Lahan successfully updated";
+  } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
+    console.error("Error while updating comment:", error);
+    throw error;
+  }
+};
+const countPercentOfAgreeFunction = async (mapId) => {
+  const client = await pool.connect();
+  try {
+    // Query untuk mengambil status dan koordinat_id_need_verif dari tabel koordinat berdasarkan mapId
     const dataKoor = await client.query(
-      "SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1",
+      "SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1", 
       [mapId]
     );
 
@@ -276,37 +302,85 @@ export const updateStatusLahan = async (mapId, client) => {
     for (const dataKoord of dataKoor.rows) {
       const dataArray = dataKoord.koordinat_id_need_verif || [];
       const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
-
+      
       let agreeArray = [];
 
       for (const koordinatId of filteredArray) {
         const dataKoorID = await client.query(
-          "SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1",
+          "SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1", 
           [koordinatId]
         );
         agreeArray.push(dataKoorID.rows[0].status);
       }
 
-      // Calculate the percentage of agreement
+      // Menghitung persentase kesepakatan
       const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
-      const percentOfAgree = (agreeArray.length > 0) ? (sum / agreeArray.length) * 100 : 0;
+      const percentOfAgree = sum / agreeArray.length * 100;
 
       if (percentOfAgree === 100) {
         totalAgree++;
       }
     }
 
-    // Update the map status if all agreements are 100%
     if (totalAgree === dataKoor.rows.length) {
-      await client.query("UPDATE maps SET status = 2 WHERE map_id = $1", [mapId]);
+      await client.query("UPDATE maps SET status = 2, komentar = 'Lahan sudah tervalidasi' WHERE map_id = $1", [mapId]);
     }
 
+    client.release();
     return "Status Lahan berhasil diperbarui";
+
   } catch (error) {
+    // Tangani kesalahan jika terjadi saat menjalankan query
     console.error("Error while updating status:", error);
+    client.release();
     throw error;
   }
 };
+
+// export const updateStatusLahan = async (mapId, client) => {
+//   try {
+//     // Count percentage of agree logic after updating maps and koordinat
+//     const dataKoor = await client.query(
+//       "SELECT koordinat.status, koordinat.koordinat_id_need_verif FROM koordinat WHERE map_id = $1",
+//       [mapId]
+//     );
+
+//     let totalAgree = 0;
+
+//     for (const dataKoord of dataKoor.rows) {
+//       const dataArray = dataKoord.koordinat_id_need_verif || [];
+//       const filteredArray = dataArray.filter(item => item !== null && item !== undefined);
+
+//       let agreeArray = [];
+
+//       for (const koordinatId of filteredArray) {
+//         const dataKoorID = await client.query(
+//           "SELECT koordinat.status FROM koordinat WHERE koordinat_id = $1",
+//           [koordinatId]
+//         );
+//         agreeArray.push(dataKoorID.rows[0].status);
+//       }
+
+//       // Calculate the percentage of agreement
+//       const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+//       const percentOfAgree = (agreeArray.length > 0) ? (sum / agreeArray.length) * 100 : 0;
+
+//       if (percentOfAgree === 100) {
+//         totalAgree++;
+//       }
+//     }
+
+//     // Update the map status if all agreements are 100%
+//     if (totalAgree === dataKoor.rows.length) {
+//       await client.query("UPDATE maps SET status = 2 WHERE map_id = $1", [mapId]);
+//     }
+
+//     return "Status Lahan berhasil diperbarui";
+//   } catch (error) {
+//     console.error("Error while updating status:", error);
+//     throw error;
+//   }
+// };
 
 export const getAllLahanbyUserId = async (req, res) => {
   const userId = req.params.user_id;
