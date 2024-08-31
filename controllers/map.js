@@ -727,12 +727,13 @@ export const getStatusById = async (req, res) => {
                    TRIM(maps.nama_lahan) AS nama_lahan, 
                    verifikasi.old_status AS old_status, 
                    verifikasi.new_status AS new_status,
+                   verifikasi.komentar AS komentar,
                    verifikasi.updated_at AS updated_at
             FROM verifikasi 
             JOIN maps ON maps.map_id = verifikasi.map_id 
             JOIN users ON maps.user_id = users.user_id 
             WHERE verifikasi.map_id = $1
-            GROUP BY users.nama_lengkap, verifikasi.map_id, maps.nama_lahan, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
+            GROUP BY users.nama_lengkap, verifikasi.map_id, verifikasi.komentar, maps.nama_lahan, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
             ORDER BY verifikasi.updated_at DESC
         `, [mapId]);
         // Directly return all rows to see what data is retrieved
@@ -741,6 +742,7 @@ export const getStatusById = async (req, res) => {
                 map_id: row.map_id,
                 name: row.nama_pemilik,
                 nama_lahan: row.nama_lahan,
+                komentar: row.komentar,
                 old_status: row.old_status,
                 new_status: row.new_status,
                 updated_at: row.updated_at,
