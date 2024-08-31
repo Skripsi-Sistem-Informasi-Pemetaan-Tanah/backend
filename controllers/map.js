@@ -36,7 +36,6 @@ FROM sorted_koordinat
 GROUP BY name, map_id, nama_lahan, progress, status
 ORDER BY name;
 `);
-        console.log(result)
         const results = await Promise.all(result.rows.map(async (row) => {
             if (row.koordinat) {
                 const coordinates = row.koordinat.map(coord => coord.map(parseFloat));
@@ -120,7 +119,6 @@ export const getMapById = async (req, res) => {
         GROUP BY nama_lahan, progress, status, nama_pemilik, updated_at
         ORDER BY nama_lahan;`, [mapId]);
             const data = result.rows[0];
-            console.log(result)
 
             if (data.length === 0) {
                 // Handle case where map data is not found
@@ -310,7 +308,6 @@ export const getValidator = async (req, res) => {
 // GROUP BY nama_lahan, progress, status, nama_pemilik, updated_at
 // ORDER BY nama_lahan;
         );
-        console.log(result.rows)
         // Jika tidak ada data
         if (result.rows.length === 0) {
             return utilData(res, 404, {message: "Map not found"});
@@ -367,7 +364,6 @@ export const getDataMapID = async (req, res) => {
           JOIN maps ON maps.map_id = koordinat.map_id 
           JOIN users ON maps.user_id = users.user_id 
           ORDER BY maps.nama_lahan, koordinat.koordinat_id`);
-        console.log(result.rows)
         // Jika tidak ada data
         if (result.rows.length === 0) {
             return utilData(res, 404, {message: "Map not found"});
@@ -723,7 +719,7 @@ export const getStatus = async (req, res) => {
 
 export const getStatusById = async (req, res) => {
     const client = await pool.connect();
-    const { mapId } = req.params;
+    const {mapId} = req.params;
     try {
         const result = await client.query(`
             SELECT users.nama_lengkap AS nama_pemilik, 
@@ -754,7 +750,7 @@ export const getStatusById = async (req, res) => {
         return utilData(res, 200, results);
     } catch (error) {
         console.error("Error:", error.message);
-        return utilData(res, 500, { message: "Internal Server Error" });
+        return utilData(res, 500, {message: "Internal Server Error"});
     } finally {
         client.release();
     }
@@ -778,7 +774,6 @@ export const getKomentarLahan = async (req, res) => {
       GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.komentar,verifikasi.updated_at
       ORDER BY verifikasi.verifikasi_id DESC
     `, [mapId]);
-        console.log(result)
         const results = result.rows.map((row) => {
             return {
                 verifikasi_id: row.verifikasi_id,

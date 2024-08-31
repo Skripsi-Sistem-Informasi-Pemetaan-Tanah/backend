@@ -311,7 +311,10 @@ const countPercentOfAgreeFunction = async (mapId) => {
           [koordinatId]
         );
         agreeArray.push(dataKoorID.rows[0].status);
+        console.log()
+        console.log(dataKoorID.rows[0].koordinat_id);
       }
+
 
       // Menghitung persentase kesepakatan
       const sum = agreeArray.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
