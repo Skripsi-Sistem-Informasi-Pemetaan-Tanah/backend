@@ -13,7 +13,8 @@ import {
     getStatusById,
     getKomentarKoordinat,
     getKomentarLahan,
-    getDataMapID
+    getDataMapID,
+    getDataMapID1
 } from "../controllers/map.js";
 import {
     validasiOnProgress,
@@ -90,6 +91,7 @@ router.get('/getStatus', getStatus);
 router.get('/getStatusById/:mapId', getStatusById);
 router.post('/addKomentar', addKomentar);
 router.get('/getDataMapID', getDataMapID);
+router.get('/getDataMapID1/:mapId', getDataMapID1);
 router.post('/addKomentarKoordinat', addKomentarKoordinat);
 router.post('/cekSameKoorVerif', cekSameKoorVerif);
 router.post('/cekKoordinatIDtoVerif', cekKoordinatIDtoVerif);

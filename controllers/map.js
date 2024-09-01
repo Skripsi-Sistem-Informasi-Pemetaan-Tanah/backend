@@ -347,6 +347,7 @@ export const getValidator = async (req, res) => {
         client.release();
     }
 };
+
 export const getDataMapID = async (req, res) => {
     const client = await pool.connect();
     //const { mapId } = req.params;
@@ -374,6 +375,62 @@ export const getDataMapID = async (req, res) => {
         // if (!data.coordinates) {
         //   return utilData(res, 404, { message: "Koordinat_verif not found" });
         // }
+        const results = await Promise.all(result.rows.map(async (row) => {
+            if (row.coordinates) {
+                //const koordinat_id = row.koordinat_id.map(coord => coord.map(parseFloat));
+                return {
+                    type: "Feature", properties: {
+                        nama_lahan: row.nama_lahan.trim(),
+                        status: row.status,
+                        nama_pemilik: row.nama_pemilik,
+                        date: row.date
+                    }, geometry: {
+                        coordinate: row.coordinates,
+                        koordinat_id: row.koordinat_id,
+                        status_coordinate: row.status_coordinates
+                    },
+                };
+            } else {
+                return null;
+            }
+        }));
+        const geoJsonResponse = featureCollection(results);
+        console.log("hit API val ID");
+        return utilData(res, 200, geoJsonResponse);
+    } catch (error) {
+        console.error("Error:", error.message);
+        return utilData(res, 500, {message: "Internal Server Error"});
+    } finally {
+        client.release();
+    }
+};
+export const getDataMapID1 = async (req, res) => {
+    const client = await pool.connect();
+    const { mapId } = req.params;
+    try {
+        const result = await client.query(`
+          SELECT 
+            TRIM(maps.nama_lahan) AS nama_lahan, 
+            maps.status as status, 
+            koordinat.koordinat as coordinates, 
+            koordinat.status AS status_coordinates,
+            users.nama_lengkap as nama_pemilik, 
+            maps.updated_at,
+            koordinat.koordinat_id as koordinat_id
+          FROM koordinat 
+          JOIN maps ON maps.map_id = koordinat.map_id 
+          JOIN users ON maps.user_id = users.user_id 
+          WHERE koordinat.map_id = $1
+          ORDER BY maps.nama_lahan, koordinat.koordinat_id`, [mapId]);
+        // Jika tidak ada data
+        console.log(result)
+
+        if (result.rowCount === 0) {
+
+            return utilData(res, 404, {message: "Map not found"});
+        }
+        const data = result.rows[0];
+
         const results = await Promise.all(result.rows.map(async (row) => {
             if (row.coordinates) {
                 //const koordinat_id = row.koordinat_id.map(coord => coord.map(parseFloat));
