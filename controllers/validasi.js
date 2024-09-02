@@ -82,7 +82,10 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
         // Query untuk mengambil semua koordinat yang akan dibandingkan jaraknya
         const findKoordinatResult = await client.query("SELECT map_id,koordinat, koordinat_id FROM koordinat WHERE map_id != $1", [fixedKoordinat.mapId]);
         const findKoordinat = findKoordinatResult.rows.map(row => ({
-            map_id: row.map_id, koordinat_id: row.koordinat_id, longitude: row.koordinat[0], latitude: row.koordinat[1]
+            map_id: row.map_id, 
+            koordinat_id: row.koordinat_id, 
+            longitude: row.koordinat[0], 
+            latitude: row.koordinat[1]
         }));
         let distances = [];
         // Hitung jarak dari koordinat yang diberikan ke setiap koordinat dari lahan lain
@@ -94,7 +97,7 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
         // Urutkan jarak dan ambil sejumlah lahan terdekat yang diminta
         distances.sort((a, b) => a.distance - b.distance);
         const closestLands = distances.slice(0, jumlahLahanBersinggungan);
-
+        console.log('closest land', closestLands)
         const closestKoordinatIds = [];
 
         closestKoordinatIds.push(koordinatId);
@@ -143,7 +146,13 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
 
                 // Cari indeks pertama yang nilainya null
                 const index = koordinatidneedverif.koordinat_id_need_verif.indexOf(null);
-                if (index !== -1) {
+                const doubleKoordId = false
+                for (const cekkoordinatidneedverif of koordinatidneedverif.koordinat_id_need_verif){
+                    if(cekkoordinatidneedverif === koordinatId){
+                        doubleKoordId = true
+                    }
+                }
+                if (index !== -1 && !doubleKoordId) {
                     // Ganti nilai null pada indeks tersebut dengan koordinatId
                     koordinatidneedverif.koordinat_id_need_verif[index] = koordinatId.toString();
 
