@@ -5,7 +5,7 @@ export const validasiOnProgress = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.body;
     try {
-        const editValidasi = await client.query("UPDATE maps SET status = 1, komentar = 'Data masih dalam progress', updated_at = NOW() WHERE map_id = $1", [mapId]);
+        const editValidasi = await client.query("UPDATE maps SET status = 1, updated_at = NOW() WHERE map_id = $1", [mapId]);
 
         client.release();
         if (editValidasi) return utilMessage(res, 200, "Data dengan id " + mapId + " berhasil divalidasi");

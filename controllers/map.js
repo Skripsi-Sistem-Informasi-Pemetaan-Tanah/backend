@@ -423,7 +423,7 @@ export const getDataMapID1 = async (req, res) => {
           WHERE koordinat.map_id = $1
           ORDER BY maps.nama_lahan, koordinat.koordinat_id`, [mapId]);
         // Jika tidak ada data
-        console.log(result)
+        // console.log(result)
 
         if (result.rowCount === 0) {
 
