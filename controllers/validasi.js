@@ -146,9 +146,10 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
 
                 // Cari indeks pertama yang nilainya null
                 const index = koordinatidneedverif.koordinat_id_need_verif.indexOf(null);
-                const doubleKoordId = false
+
+                let doubleKoordId = false
                 for (const cekkoordinatidneedverif of koordinatidneedverif.koordinat_id_need_verif){
-                    if(cekkoordinatidneedverif === koordinatId){
+                    if(cekkoordinatidneedverif === koordinatId.toString()){
                         doubleKoordId = true
                     }
                 }
