@@ -152,7 +152,7 @@ export const cekKoordinatIDtoVerif = async (req, res) => {
                         doubleKoordId = true
                     }
                 }
-                if (index !== -1 && !doubleKoordId) {
+                if (index !== -1 && doubleKoordId === false) {
                     // Ganti nilai null pada indeks tersebut dengan koordinatId
                     koordinatidneedverif.koordinat_id_need_verif[index] = koordinatId.toString();
 
