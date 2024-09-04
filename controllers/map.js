@@ -688,13 +688,10 @@ WITH unique_history AS (
            users.nama_lengkap AS nama_pemilik, 
            history.koordinat_id AS koordinat_id, 
            TRIM(maps.nama_lahan) AS nama_lahan, 
-           TRIM(history.old_status) AS old_status, 
-           TRIM(history.status) AS status, 
-           history.komentar AS komentar,
-           history.old_koordinat_verif AS old_koordinat_verif,
-           history.new_koordinat_verif AS new_koordinat_verif,
            history.old_coordinate AS old_coordinate, 
            history.new_coordinate AS new_coordinate,
+           history.old_koordinat_verif AS old_koordinat_verif,
+           history.new_koordinat_verif AS new_koordinat_verif,
            TO_CHAR(history.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
     FROM history 
     JOIN maps ON maps.map_id = history.map_id 
@@ -710,21 +707,16 @@ SELECT * FROM unique_history
 ORDER BY TO_TIMESTAMP(updated_at, 'HH24:MI/DD/MM/YYYY') DESC, koordinat_id DESC
             `, [mapId]);
 
-        const results = result.rows.map((row) => {
-            return {
-                koordinat_id: row.koordinat_id,
-                name: row.nama_pemilik,
-                nama_lahan: row.nama_lahan,
-                old_coordinate: row.old_coordinate,
-                new_coordinate: row.new_coordinate,
-                old_koordinat_verif: row.old_koordinat_verif,
-                new_koordinat_verif: row.new_koordinat_verif,
-                old_status: row.old_status,
-                status: row.status,
-                komentar: row.komentar,
-                updated_at: row.updated_at
-            };
-        });
+        const results = result.rows.map((row) => ({
+            koordinat_id: row.koordinat_id,
+            name: row.nama_pemilik,
+            nama_lahan: row.nama_lahan,
+            old_coordinate: row.old_coordinate,
+            new_coordinate: row.new_coordinate,
+            old_koordinat_verif: row.old_koordinat_verif,
+            new_koordinat_verif: row.new_koordinat_verif,
+            updated_at: row.updated_at
+        }));
 
         return utilData(res, 200, results);
     } catch (error) {
@@ -734,7 +726,6 @@ ORDER BY TO_TIMESTAMP(updated_at, 'HH24:MI/DD/MM/YYYY') DESC, koordinat_id DESC
         client.release();
     }
 };
-
 
 export const getStatus = async (req, res) => {
     const client = await pool.connect();
@@ -777,32 +768,34 @@ export const getStatus = async (req, res) => {
 export const getStatusById = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
+
     try {
         const result = await client.query(`
-            SELECT users.nama_lengkap AS nama_pemilik, 
-                   verifikasi.map_id AS map_id, 
-                   TRIM(maps.nama_lahan) AS nama_lahan, 
-                   verifikasi.old_status AS old_status, 
-                   verifikasi.new_status AS new_status,
-                   verifikasi.komentar AS komentar,
-                   verifikasi.updated_at AS updated_at
+            SELECT 
+                users.nama_lengkap AS nama_pemilik, 
+                verifikasi.map_id AS map_id, 
+                TRIM(maps.nama_lahan) AS nama_lahan, 
+                verifikasi.old_status AS old_status, 
+                verifikasi.new_status AS new_status,
+                TO_CHAR(verifikasi.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
             FROM verifikasi 
             JOIN maps ON maps.map_id = verifikasi.map_id 
             JOIN users ON maps.user_id = users.user_id 
             WHERE verifikasi.map_id = $1
-            GROUP BY users.nama_lengkap, verifikasi.map_id, verifikasi.komentar, maps.nama_lahan, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
-            ORDER BY verifikasi.updated_at DESC
+              AND verifikasi.old_status IS NOT NULL 
+              AND verifikasi.new_status IS NOT NULL
+              AND verifikasi.old_status != verifikasi.new_status 
+            ORDER BY verifikasi.updated_at DESC;
         `, [mapId]);
-        // Directly return all rows to see what data is retrieved
+
         const results = result.rows.map((row) => {
             return {
                 map_id: row.map_id,
                 name: row.nama_pemilik,
                 nama_lahan: row.nama_lahan,
-                komentar: row.komentar,
                 old_status: row.old_status,
                 new_status: row.new_status,
-                updated_at: row.updated_at,
+                updated_at: row.updated_at, // Already formatted in SQL
             };
         });
 
@@ -814,6 +807,7 @@ export const getStatusById = async (req, res) => {
         client.release();
     }
 };
+;
 
 
 export const getKomentarLahan = async (req, res) => {
@@ -825,7 +819,7 @@ export const getKomentarLahan = async (req, res) => {
                    verifikasi.verifikasi_id AS verifikasi_id,
                    TRIM(maps.nama_lahan) AS nama_lahan, 
                    TRIM(verifikasi.komentar) AS komentar, 
-                   verifikasi.updated_at AS updated_at
+                   TO_CHAR(verifikasi.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
             FROM verifikasi 
             JOIN maps ON maps.map_id = verifikasi.map_id 
             JOIN users ON maps.user_id = users.user_id 
@@ -868,7 +862,7 @@ export const getKomentarKoordinat = async (req, res) => {
                    TRIM(maps.nama_lahan) AS nama_lahan, 
                    TRIM(history.komentar) AS komentar, 
                    TRIM(history.komentar_mobile) AS komentar_mobile,
-                   history.updated_at AS updated_at
+                   TO_CHAR(history.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
             FROM history 
             JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
             JOIN maps ON maps.map_id = koordinat.map_id 
@@ -902,7 +896,6 @@ export const getKomentarKoordinat = async (req, res) => {
         client.release();
     }
 };
-
 
 // if (
 //   data.koordinat_verif.some(arr => arr === null) ||
