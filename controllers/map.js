@@ -406,7 +406,7 @@ export const getDataMapID = async (req, res) => {
 };
 export const getDataMapID1 = async (req, res) => {
     const client = await pool.connect();
-    const { mapId } = req.params;
+    const {mapId} = req.params;
     try {
         const result = await client.query(`
           SELECT 
@@ -821,18 +821,21 @@ export const getKomentarLahan = async (req, res) => {
     const {mapId} = req.params;
     try {
         const result = await client.query(`
-      SELECT users.nama_lengkap AS nama_pemilik, 
-             verifikasi.verifikasi_id AS verifikasi_id,
-             TRIM(maps.nama_lahan) AS nama_lahan, 
-             TRIM(verifikasi.komentar) AS komentar, 
-             verifikasi.updated_at AS updated_at
-      FROM verifikasi 
-      JOIN maps ON maps.map_id = verifikasi.map_id 
-      JOIN users ON maps.user_id = users.user_id 
-      WHERE verifikasi.map_id = $1
-      GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.komentar,verifikasi.updated_at
-      ORDER BY verifikasi.verifikasi_id DESC
-    `, [mapId]);
+            SELECT users.nama_lengkap AS nama_pemilik, 
+                   verifikasi.verifikasi_id AS verifikasi_id,
+                   TRIM(maps.nama_lahan) AS nama_lahan, 
+                   TRIM(verifikasi.komentar) AS komentar, 
+                   verifikasi.updated_at AS updated_at
+            FROM verifikasi 
+            JOIN maps ON maps.map_id = verifikasi.map_id 
+            JOIN users ON maps.user_id = users.user_id 
+            WHERE verifikasi.map_id = $1
+              AND verifikasi.komentar IS NOT NULL
+              AND TRIM(verifikasi.komentar) <> ''
+            GROUP BY users.nama_lengkap, maps.progress, users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.updated_at
+            ORDER BY verifikasi.verifikasi_id DESC
+        `, [mapId]);
+
         const results = result.rows.map((row) => {
             return {
                 verifikasi_id: row.verifikasi_id,
@@ -852,27 +855,32 @@ export const getKomentarLahan = async (req, res) => {
     }
 };
 
+
 export const getKomentarKoordinat = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
 
     try {
         const result = await client.query(`
-      SELECT users.nama_lengkap AS nama_pemilik, 
-             history.history_id AS history_id,
-             koordinat.koordinat_id AS koordinat_id, 
-             TRIM(maps.nama_lahan) AS nama_lahan, 
-             TRIM(history.komentar) AS komentar, 
-             TRIM(history.komentar_mobile) AS komentar_mobile,
-             history.updated_at AS updated_at
-      FROM history 
-      JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
-      JOIN maps ON maps.map_id = koordinat.map_id 
-      JOIN users ON maps.user_id = users.user_id 
-      WHERE koordinat.map_id = $1
-      GROUP BY users.nama_lengkap,maps.progress,users.username, history.komentar_mobile, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.komentar,history.updated_at
-      ORDER BY history.history_id DESC
-    `, [mapId]);
+            SELECT users.nama_lengkap AS nama_pemilik, 
+                   history.history_id AS history_id,
+                   koordinat.koordinat_id AS koordinat_id, 
+                   TRIM(maps.nama_lahan) AS nama_lahan, 
+                   TRIM(history.komentar) AS komentar, 
+                   TRIM(history.komentar_mobile) AS komentar_mobile,
+                   history.updated_at AS updated_at
+            FROM history 
+            JOIN koordinat ON history.koordinat_id = koordinat.koordinat_id
+            JOIN maps ON maps.map_id = koordinat.map_id 
+            JOIN users ON maps.user_id = users.user_id 
+            WHERE koordinat.map_id = $1
+              AND history.komentar IS NOT NULL
+              AND TRIM(history.komentar) <> ''
+              AND history.komentar_mobile IS NOT NULL
+              AND TRIM(history.komentar_mobile) <> ''
+            GROUP BY users.nama_lengkap, maps.progress, users.username, history.komentar_mobile, history.history_id, history.komentar, koordinat.koordinat_id, maps.nama_lahan, maps.status, history.updated_at
+            ORDER BY history.history_id DESC
+        `, [mapId]);
 
         const results = result.rows.map((row) => {
             return {
@@ -894,6 +902,7 @@ export const getKomentarKoordinat = async (req, res) => {
         client.release();
     }
 };
+
 
 // if (
 //   data.koordinat_verif.some(arr => arr === null) ||
