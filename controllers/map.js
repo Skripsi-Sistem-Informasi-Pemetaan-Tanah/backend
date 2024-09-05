@@ -764,7 +764,6 @@ export const getStatus = async (req, res) => {
         client.release();
     }
 };
-
 export const getStatusById = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
@@ -772,6 +771,7 @@ export const getStatusById = async (req, res) => {
     try {
         const result = await client.query(`
             SELECT 
+                verifikasi.verifikasi_id AS verifikasi_id,
                 users.nama_lengkap AS nama_pemilik, 
                 verifikasi.map_id AS map_id, 
                 TRIM(maps.nama_lahan) AS nama_lahan, 
@@ -790,6 +790,7 @@ export const getStatusById = async (req, res) => {
 
         const results = result.rows.map((row) => {
             return {
+                verifikasi_id: row.verifikasi_id,  // Add verifikasi_id to the result object
                 map_id: row.map_id,
                 name: row.nama_pemilik,
                 nama_lahan: row.nama_lahan,
@@ -807,7 +808,6 @@ export const getStatusById = async (req, res) => {
         client.release();
     }
 };
-;
 
 
 export const getKomentarLahan = async (req, res) => {

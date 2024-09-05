@@ -250,7 +250,7 @@ export const verifikasiKoordinat = async (req, res) => {
     if (allStatusOne) {
       const updateKomentarQuery = `
         UPDATE maps
-        SET komentar = 'silakan tunggu validasi titik koordinat dari pemilik lahan yang bersinggungan dengan lahan Anda', updated_at = $1
+        SET komentar = 'silahkan tunggu validasi titik koordinat dari pemilik lahan yang bersinggungan dengan lahan Anda', updated_at = $1
         WHERE map_id = $2
       `;
       await client.query(updateKomentarQuery, [currentTime, lahan.map_id]);
