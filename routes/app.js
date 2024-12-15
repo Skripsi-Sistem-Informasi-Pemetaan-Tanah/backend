@@ -9,10 +9,12 @@ import {
     getHistory,
     getHistoryById,
     getValidator,
-    getStatus,
-    getStatusById,
-    getKomentarKoordinat,
+    getCoordinateStatus,
+    getLandStatus,
+    getLandStatusById,
+    getKomentarKoordinatById,
     getKomentarLahan,
+    getKomentarLahanById,
     getDataMapID,
     getDataMapID1
 } from "../controllers/map.js";
@@ -86,17 +88,19 @@ router.post('/validasiDitolak', validasiDitolak);
 router.post('/cekValidasi/:mapId', cekValidasi);
 router.get('/getAllMaps', getAllMaps);
 router.get('/getHistory', getHistory);
-router.get('/getHistoryById/:mapId', getHistoryById)
-router.get('/getStatus', getStatus);
-router.get('/getStatusById/:mapId', getStatusById);
+router.get('/getHistoryById/:mapId', getHistoryById);
+router.get('/getCoordinateStatus', getCoordinateStatus);
+router.get('/getLandStatus', getLandStatus);
+router.get('/getLandStatusById/:mapId', getLandStatusById);
 router.post('/addKomentar', addKomentar);
 router.get('/getDataMapID', getDataMapID);
 router.get('/getDataMapID1/:mapId', getDataMapID1);
 router.post('/addKomentarKoordinat', addKomentarKoordinat);
 router.post('/cekSameKoorVerif', cekSameKoorVerif);
 router.post('/cekKoordinatIDtoVerif', cekKoordinatIDtoVerif);
-router.get('/getKomentarKoordinat/:mapId', getKomentarKoordinat)
-router.get('/getKomentarLahan/:mapId', getKomentarLahan)
+router.get('/getKomentarKoordinatById/:mapId', getKomentarKoordinatById)
+router.get('/getKomentarLahan', getKomentarLahan);
+router.get('/getKomentarLahanById/:mapId', getKomentarLahanById);
 router.post('/updateStatusLahan', updateStatusLahan);
 router.get('/totalRequest', totalRequest);
 router.get('/pendingRequest', pendingRequest);

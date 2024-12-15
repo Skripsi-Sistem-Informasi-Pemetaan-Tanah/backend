@@ -635,29 +635,43 @@ export const getHistory = async (req, res) => {
 
     try {
         const result = await client.query(`
-      SELECT users.nama_lengkap AS nama_pemilik, 
-             history.koordinat_id AS koordinat_id, 
-             TRIM(maps.nama_lahan) AS nama_lahan, 
-             TRIM(history.old_status) AS old_status, 
-             TRIM(history.status) AS status, 
-             history.komentar AS komentar,
-             history.old_koordinat_verif AS old_koordinat_verif,
-             history.new_koordinat_verif AS new_koordinat_verif,
-             history.old_coordinate AS old_coordinate, 
-             history.new_coordinate AS new_coordinate,
-             history.updated_at AS updated_at
-      FROM history 
-      JOIN maps ON maps.map_id = history.map_id 
-      JOIN users ON maps.user_id = users.user_id 
-      WHERE history.old_coordinate IS NOT NULL
-      GROUP BY users.nama_lengkap, history.komentar, history.old_koordinat_verif, history.new_koordinat_verif, history.koordinat_id, maps.nama_lahan, history.status, history.old_status, history.old_coordinate, history.new_coordinate, history.updated_at
-      ORDER BY history.koordinat_id DESC
-    `);
+            WITH unique_history AS (
+                SELECT DISTINCT ON (history.old_coordinate, history.new_coordinate, history.old_koordinat_verif, history.new_koordinat_verif)
+                    users.nama_lengkap AS nama_pemilik, 
+                    history.koordinat_id AS koordinat_id, 
+                    TRIM(maps.nama_lahan) AS nama_lahan,
+                    history.map_id as map_id, 
+--                     TRIM(history.old_status) AS old_status, 
+--                     TRIM(history.status) AS status, 
+                    history.old_koordinat_verif AS old_koordinat_verif,
+                    history.new_koordinat_verif AS new_koordinat_verif,
+                    history.old_coordinate AS old_coordinate, 
+                    history.new_coordinate AS new_coordinate,
+                    TO_CHAR(history.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
+                FROM history 
+                JOIN maps ON maps.map_id = history.map_id 
+                JOIN users ON maps.user_id = users.user_id 
+                WHERE history.old_coordinate IS NOT NULL
+                  AND history.new_coordinate IS NOT NULL
+                  AND history.koordinat_id IS NOT NULL
+                  AND history.old_koordinat_verif IS NOT NULL
+                  AND history.new_koordinat_verif IS NOT NULL
+                ORDER BY 
+                    history.old_coordinate, 
+                    history.new_coordinate, 
+                    history.old_koordinat_verif, 
+                    history.new_koordinat_verif,
+                    history.updated_at DESC
+            )
+            SELECT * FROM unique_history
+            ORDER BY TO_TIMESTAMP(updated_at, 'HH24:MI/DD/MM/YYYY') DESC, koordinat_id DESC;
+        `);
 
         const results = result.rows.map((row) => {
             return {
+                map_id: row.map_id,
                 koordinat_id: row.koordinat_id,
-                name: row.name_pemilik,
+                name: row.nama_pemilik,
                 nama_lahan: row.nama_lahan,
                 old_coordinate: row.old_coordinate,
                 new_coordinate: row.new_coordinate,
@@ -665,10 +679,10 @@ export const getHistory = async (req, res) => {
                 new_koordinat_verif: row.new_koordinat_verif,
                 old_status: row.old_status,
                 status: row.status,
-                komentar: row.komentar,
                 updated_at: row.updated_at
             };
         });
+
         return utilData(res, 200, results);
     } catch (error) {
         console.error("Error:", error.message);
@@ -677,6 +691,7 @@ export const getHistory = async (req, res) => {
         client.release();
     }
 };
+
 
 export const getHistoryById = async (req, res) => {
     const client = await pool.connect();
@@ -726,24 +741,73 @@ ORDER BY TO_TIMESTAMP(updated_at, 'HH24:MI/DD/MM/YYYY') DESC, koordinat_id DESC
         client.release();
     }
 };
-
-export const getStatus = async (req, res) => {
+export const getCoordinateStatus = async (req, res) => {
     const client = await pool.connect();
     try {
         const result = await client.query(`
-      SELECT users.nama_lengkap AS nama_pemilik, 
-             verifikasi.map_id AS map_id, 
-             TRIM(maps.nama_lahan) AS nama_lahan, 
-             maps.progress AS progress, 
-             verifikasi.old_status AS old_status, 
-             verifikasi.new_status AS new_status,
-             verifikasi.updated_at AS updated_at
-      FROM verifikasi 
-      JOIN maps ON maps.map_id = verifikasi.map_id 
-      JOIN users ON maps.user_id = users.user_id 
-      GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
-      ORDER BY verifikasi.map_id DESC
-    `);
+            WITH unique_history AS (
+                SELECT DISTINCT ON (history.koordinat_id)
+                users.nama_lengkap AS nama_pemilik,
+                history.map_id AS map_id,
+                history.koordinat_id AS koordinat_id,
+                TRIM(maps.nama_lahan) AS nama_lahan,
+                TRIM(history.old_status) AS old_status,
+                TRIM(history.status) AS new_status,
+                TO_CHAR(history.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
+            FROM history
+                JOIN maps ON maps.map_id = history.map_id
+                JOIN users ON maps.user_id = users.user_id
+            WHERE history.old_status IS NOT NULL
+              AND history.status IS NOT NULL
+              AND history.koordinat_id IS NOT NULL
+              AND history.old_status != history.status
+            ORDER BY
+                history.koordinat_id,
+                history.updated_at DESC
+                )
+            SELECT * FROM unique_history
+            ORDER BY TO_TIMESTAMP(updated_at, 'HH24:MI/DD/MM/YYYY') DESC, koordinat_id DESC;
+        `);
+
+        const results = result.rows.map((row) => {
+            return {
+                map_id: row.map_id,
+                koordinat_id: row.koordinat_id,
+                name: row.nama_pemilik,
+                nama_lahan: row.nama_lahan,
+                old_status: row.old_status,
+                new_status: row.new_status,
+                updated_at: row.updated_at,
+            };
+        });
+
+        return utilData(res, 200, results);
+    } catch (error) {
+        console.error("Error:", error.message);
+        return utilData(res, 500, {message: "Internal Server Error"});
+    } finally {
+        client.release();
+    }
+};
+export const getLandStatus = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(`
+            SELECT users.nama_lengkap AS nama_pemilik,
+                   verifikasi.map_id AS map_id,
+                   TRIM(maps.nama_lahan) AS nama_lahan,
+                   maps.progress AS progress,
+                   verifikasi.old_status AS old_status,
+                   verifikasi.new_status AS new_status,
+                   TO_CHAR(verifikasi.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
+            FROM verifikasi
+                     JOIN maps ON maps.map_id = verifikasi.map_id
+                     JOIN users ON maps.user_id = users.user_id
+            WHERE verifikasi.old_status IS NOT NULL
+              AND verifikasi.old_status != verifikasi.new_status
+            GROUP BY users.nama_lengkap,maps.progress,users.username, verifikasi.map_id, maps.nama_lahan, maps.status, verifikasi.old_status, verifikasi.new_status,verifikasi.updated_at
+            ORDER BY verifikasi.updated_at DESC
+        `);
 
         const results = result.rows.map((row) => {
             return {
@@ -764,7 +828,7 @@ export const getStatus = async (req, res) => {
         client.release();
     }
 };
-export const getStatusById = async (req, res) => {
+export const getLandStatusById = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
 
@@ -809,10 +873,51 @@ export const getStatusById = async (req, res) => {
     }
 };
 
-
 export const getKomentarLahan = async (req, res) => {
     const client = await pool.connect();
-    const {mapId} = req.params;
+    try {
+        const result = await client.query(`
+            SELECT users.nama_lengkap AS nama_pemilik,
+                   verifikasi.verifikasi_id AS verifikasi_id,
+                   TRIM(maps.nama_lahan) AS nama_lahan,
+                   maps.map_id AS map_id,
+                   TRIM(verifikasi.komentar) AS komentar,
+                   TO_CHAR(verifikasi.updated_at, 'HH24:MI/DD/MM/YYYY') AS updated_at
+            FROM verifikasi
+                     JOIN maps ON maps.map_id = verifikasi.map_id
+                     JOIN users ON maps.user_id = users.user_id
+            WHERE verifikasi.komentar IS NOT NULL
+              AND TRIM(verifikasi.komentar) <> ''
+            GROUP BY users.nama_lengkap, maps.progress, users.username,
+                     verifikasi.verifikasi_id, verifikasi.komentar,
+                     maps.nama_lahan, maps.status, verifikasi.updated_at,
+                     maps.map_id
+            ORDER BY verifikasi.verifikasi_id DESC
+        `);
+
+        const results = result.rows.map((row) => {
+            return {
+                verifikasi_id: row.verifikasi_id,
+                map_id: row.map_id,
+                name: row.nama_pemilik,
+                nama_lahan: row.nama_lahan,
+                komentar: row.komentar,
+                updated_at: row.updated_at,
+            };
+        });
+
+        return utilData(res, 200, results);
+    } catch (error) {
+        console.error("Error:", error.message);
+        return utilData(res, 500, {message: "Internal Server Error"});
+    } finally {
+        client.release();
+    }
+};
+
+export const getKomentarLahanById = async (req, res) => {
+    const client = await pool.connect();
+    const { mapId } = req.params;
     try {
         const result = await client.query(`
             SELECT users.nama_lengkap AS nama_pemilik, 
@@ -826,7 +931,9 @@ export const getKomentarLahan = async (req, res) => {
             WHERE verifikasi.map_id = $1
               AND verifikasi.komentar IS NOT NULL
               AND TRIM(verifikasi.komentar) <> ''
-            GROUP BY users.nama_lengkap, maps.progress, users.username, verifikasi.verifikasi_id, verifikasi.komentar, maps.nama_lahan, maps.status, verifikasi.updated_at
+            GROUP BY users.nama_lengkap, maps.progress, users.username, 
+                     verifikasi.verifikasi_id, verifikasi.komentar, 
+                     maps.nama_lahan, maps.status, verifikasi.updated_at
             ORDER BY verifikasi.verifikasi_id DESC
         `, [mapId]);
 
@@ -850,7 +957,7 @@ export const getKomentarLahan = async (req, res) => {
 };
 
 
-export const getKomentarKoordinat = async (req, res) => {
+export const getKomentarKoordinatById = async (req, res) => {
     const client = await pool.connect();
     const {mapId} = req.params;
 
