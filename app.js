@@ -43,7 +43,11 @@ const PORT = 5000;
 //   console.log(`error : ${error.message}`);
 // }
 
-app.use(cors({ credentials: true, origin: "http://localhost:5173" }));
+app.use(cors({
+    credentials: true,
+    origin: ["https://main.d2tpm2gq4h2cq6.amplifyapp.com"]
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
